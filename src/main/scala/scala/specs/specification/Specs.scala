@@ -27,13 +27,13 @@ abstract class Specification extends Matchers with SpecificationStructure {
   def usingAfter(afterFunction: () => Unit) = { suts.last.after = Some(afterFunction) }
 
   /** @return the failures of each sut */
-  def failures = suts.flatMap {_.failures}
+  def failures: List[FailureException] = subSpecifications.flatMap{_.failures} ::: suts.flatMap {_.failures}
 
   /** @return the errors of each sut */
-  def errors = suts.flatMap {_.errors}
+  def errors: List[Throwable] = subSpecifications.flatMap{_.errors} ::: suts.flatMap {_.errors}
 
   /** @return the total number of assertions for each sut */
-  def assertionsNb = suts.foldLeft(0) {_ + _.assertionsNb}
+  def assertionsNb: Int = subSpecifications.foldLeft(0) {_ + _.assertionsNb} + suts.foldLeft(0) {_ + _.assertionsNb}
 
   /** @return a description of this specification with all its suts (used for the ConsoleReporter) */
   def pretty = description + suts.foldLeft("") {_ + _.pretty(addSpace("\n"))}

@@ -8,8 +8,9 @@ object allMatchersUnit extends Specification {
   "Matchers unit tests" areSpecifiedBy (anyMatchersUnit, 
                                         iterableMatchersUnit,
                                         logicalMatchersUnit,
-                                        stringMatchersUnit,
+                                        matcherUnit,
                                         numericMatchersUnit,
                                         patternMatchersUnit,
-                                        scalacheckMatchersUnit)
+                                        scalacheckMatchersUnit,
+                                        stringMatchersUnit)
 }

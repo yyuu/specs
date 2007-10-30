@@ -26,6 +26,14 @@ object specificationUnit extends Specification {
                                            not(beInt))
       }
    }
+   "create a default sut and example if an assertion is created alone" in {
+      object nudeSpec extends Specification {
+        "name" mustEqual "name"
+      }
+      nudeSpec.suts.size mustBe 1
+      nudeSpec.suts.head.examples.size mustBe 1
+      nudeSpec.assertionsNb mustBe 1
+    }
   }
   def isInt(s: String): Boolean = {try {s.toInt} catch {case _ => return false}; true}
   def beInt = new Matcher[String](){

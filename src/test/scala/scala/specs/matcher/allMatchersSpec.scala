@@ -6,12 +6,12 @@ import scala.specs.specification._
 
 object matchersTestSuite extends JUnit3(matchersSpec) 
 object matchersSpec extends Specification {
-  "Matchers" areSpecifiedBy (objectMatchersSpec, 
-                             stringMatchersSpec, 
-                             iterableMatchersSpec, 
+  "Matchers" areSpecifiedBy (iterableMatchersSpec, 
                              mapMatchersSpec,
+                             objectMatchersSpec, 
                              patternMatchersSpec,
-                             scalacheckMatchersSpec)
+                             scalacheckMatchersSpec,
+                             stringMatchersSpec)
 }
 trait MatchersSpecification extends Specification {
   var reported: Example = new Example("this example serves as a stub to collect failure messages", new Sut("", this))

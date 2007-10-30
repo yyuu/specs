@@ -40,6 +40,11 @@ trait AnyMatchers {
   def is_!=[T](a: T) = (is_==(a)).not 
   
   /**
+   * Matches is (a != b)
+   */   
+  def be_!=[T](a: T) = (is_==(a)).not 
+    
+  /**
    * Matches if iterable.exists(_ == a)
    */   
   def beIn[T <: AnyRef](iterable: Iterable[T]) = new Matcher[T](){

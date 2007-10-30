@@ -12,6 +12,9 @@ object sugarSpec extends Specification with Sugar {
       3 times {j += _}
       j mustBe 6
     }
+    "have a * method on String to multiply a string a number of times" in {
+      "s" * 3 must_== "sss"
+    }
   }
   
 }
