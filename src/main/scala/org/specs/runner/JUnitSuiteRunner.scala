@@ -70,13 +70,13 @@ trait TestDescription {
          test.toString
     }
     def hashcode(test: Test) = test.hashCode.toString
-    createSuiteDescription(getName(test) +"("+hashcode(test)+")", null)
+    createSuiteDescription(getName(test) +"("+hashcode(test)+")")
   }
 
   /**
    * @return the description of the suite based on its name
    */
-  def asDescription(ts: JUnitSuite) = createSuiteDescription(if (ts.getName == null) "" else ts.getName, null)
+  def asDescription(ts: JUnitSuite) = createSuiteDescription(if (ts.getName == null) "" else ts.getName)
   
   /**
    * create a Description from a TestCase or a JUnitSuite object

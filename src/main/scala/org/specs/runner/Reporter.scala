@@ -127,7 +127,7 @@ trait OutputReporter extends Reporter with Output {
    */
   def printStats(stat: (Int, Int, Int, Int, Int), padding: String) = {
     val (examplesNb, assertionsNb,  failuresNb, errorsNb, skippedNb) = stat
-    def plural[T](nb: int) = if (nb > 1) "s" else ""
+    def plural[T](nb: Int) = if (nb > 1) "s" else ""
     println(padding + "Finished in " + timer.stop)
     println(padding + 
             examplesNb + " example" + plural(examplesNb) +

@@ -30,7 +30,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.specs</groupId>
   <artifactId>specs</artifactId>
-  <version>1.3.0</version>
+  <version>1.3.0-scSNAPSHOT</version>
   <packaging>jar</packaging>
   <name>${project.artifactId}</name>
   <description>specs is a Behaviour-Driven-Design framework</description>
@@ -62,7 +62,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
     </developer>
   </developers>
   <properties>
-    <scala.version>2.7.1</scala.version>
+    <scala.version>SNAPSHOT</scala.version>
     <java.src.version>1.5</java.src.version>
   </properties>
   <repositories>
@@ -214,9 +214,13 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
         <artifactId>maven-scala-plugin</artifactId>
         <version>2.6</version>
         <configuration>
-		  <jvmArgs>
-           <jvmArg>-Xmx512m</jvmArg>
+          <jvmArgs>
+            <jvmArg>-Xmx512m</jvmArg>
           </jvmArgs>
+          <args>
+            <arg>-deprecation</arg>
+            <!--arg>-unchecked</arg-->
+          </args>
           <vscaladocVersion>1.2-SNAPSHOT</vscaladocVersion>
           <scalaVersion>${scala.version}</scalaVersion>
         </configuration>

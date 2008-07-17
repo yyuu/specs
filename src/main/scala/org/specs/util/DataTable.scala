@@ -275,7 +275,7 @@ case class DataTable[T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13,
    */  
   override def toString = (header.toString + "\n" + rows.mkString("\n"))
   sealed abstract class RowResult {
-    def isOk: boolean
+    def isOk: Boolean
   }
   case class RowOk(row: AbstractDataRow) extends RowResult {
     def isOk = true
