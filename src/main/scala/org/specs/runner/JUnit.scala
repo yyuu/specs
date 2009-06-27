@@ -176,7 +176,8 @@ class ExamplesTestSuite(description: String, examples: Iterable[Example], skippe
  */
 class ExampleTestCase(example: Example, description: String) extends TestCase(description.replaceAll("\n", " ")) {
   override def run(result: TestResult) = {
-    result.startTest(this)
+    if (example.ownSkipped.isEmpty)
+	  result.startTest(this)
     def report(ex: Example, context: String) = {
       ex.ownFailures foreach {
         failure: FailureException =>
@@ -193,7 +194,8 @@ class ExampleTestCase(example: Example, description: String) extends TestCase(de
     }
     report(example, "")
     example.subExamples foreach {subExample => report(subExample, subExample.description + " -> ")}
-    result.endTest(this)
+    if (example.ownSkipped.isEmpty)
+      result.endTest(this)
   }
 }
 
