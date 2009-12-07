@@ -99,7 +99,7 @@ class Property[T](var value: () => Option[T]) {
   override def toString = toStringer(get)
   
   /** @return an iterator containing the value if present */
-  def elements = optionalValue.elements
+  def iterator = optionalValue.iterator
   /** return the property with the value being filtered according to a predicate */
   def filter(p: T => Boolean): this.type = { 
     val v = value() 
@@ -166,10 +166,10 @@ trait Properties {
   implicit def anyToAs[T](a: T) = new AsProperty(a)
   implicit def propertyToValue[T](p: Property[T]):T = p()
   case class AsProperty[T](a: T) { 
-    def as(p: Property[T]): T = {p() = a; a }
-    def apply(p: Property[T]): T = {p() = a; a}
-    def apply(f: T => Any): T = {f(a); a }
-    def as(f: T => Any): T= {f(a); a }
+    def as(p: Property[T]) = {p() = a; a }
+    def apply(p: Property[T]) = {p() = a; a}
+    def apply(f: T => Any)= {f(a); a }
+    def as(f: T => Any)= {f(a); a }
   }
 
 }

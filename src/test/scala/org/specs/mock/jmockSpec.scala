@@ -25,6 +25,7 @@ import org.specs.specification._
 import org.specs.runner._
 import org.hamcrest.core._
 import org.specs.matcher._
+import org.specs._
 
 class jmockSpec extends SpecificationWithJUnit {
   "The jMock integration".isSpecifiedBy(jmockGoodSpecification, jmockBadSpecification, countingNamingSchemeSpecification)
@@ -130,8 +131,8 @@ object jmockGoodSpecification extends Mocked {
     }
     "provide a willReturn method to specify the a returned iterator" in {
       val expected = List[String]("hey")
-      expect { 1.of(scalaList).elements willReturn expected.elements }
-      scalaList.elements.next must_== "hey"
+      expect { 1.of(scalaList).iterator willReturn expected.iterator }
+      scalaList.iterator.next must_== "hey"
     }
     "provide a willReturn method to specify a returned iterable" in {
       expect { 1.of(scalaList).take(anyInt) willReturn List("hey") }
@@ -326,7 +327,7 @@ object jmockBadSpecification extends BadMocked {
     }
   }
 }
-trait BadMocked extends Mocked {
+class BadMocked extends Mocked {
   var checkAfterExpectations = true
   override def executeExpectations(ex: Examples, t: => Any) = {
     try {
@@ -346,7 +347,7 @@ trait BadMocked extends Mocked {
         checkAfterExpectations = true
   }
 }
-trait Mocked extends Specification with JMocker with ClassMocker {
+class Mocked extends Specification with JMocker with ClassMocker {
   class ToMock {
     def isEmpty = true
     def isEmpty2 = false

@@ -321,7 +321,7 @@ trait Contexts extends BaseSpecification with BeforeAfter { outer =>
 
 }
 /** 
- * Case class holding before and after functions to be set on a system under test.<p>
+ * class holding before and after functions to be set on a system under test.<p>
  * Context objects are usually created using the factory methods of the Contexts trait:<pre>
  * 
  * // this method returns a context object which can be passed to a System under test (with "a system" ->(context) should {... )
@@ -329,7 +329,7 @@ trait Contexts extends BaseSpecification with BeforeAfter { outer =>
  * beforeContext(initSystem).until(enoughTestsAreExecuted)
  * </pre>
  */
-case class Context() {
+class Context {
   private[specs] var firstActions: () => Any = () => () 
   private[specs] var lastActions: () => Any = () => ()
   private[specs] var beforeActions: () => Any = () => () 

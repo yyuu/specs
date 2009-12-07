@@ -26,6 +26,7 @@ import _root_.junit.framework._
 import org.junit.runner.notification.RunNotifier
 import org.junit.runner.Description
 import org.specs.specification._
+import org.specs._
 
 class junitTestSuiteSpec extends SpecificationWithJUnit {
   "A junit test suite for a composite specification" should {
@@ -52,7 +53,7 @@ class junitTestSuiteSpec extends SpecificationWithJUnit {
         "sus1" should { "ex1" in { 1 must_== 1 }; "ex2" in { 1 must_== 1 }}
       }
       makeRunners(S1) foreach { r =>
-        val test1 = r.suites.flatMap(_.asInstanceOf[JUnitSuite].testCases).first
+        val test1 = r.suites.flatMap(_.asInstanceOf[JUnitSuite].testCases).head
         val test2 = r.suites.flatMap(_.asInstanceOf[JUnitSuite].testCases).last
         test1.toString must include("ex1")
         test2.toString must include("ex2")
@@ -107,7 +108,7 @@ class junitTestSuiteSpec extends SpecificationWithJUnit {
       val suite = new ExamplesTestSuite("it should", List(s.e), None) {
         override lazy val isExecutedFromMaven = true
       }
-      suite.tests.first.toString aka "the example description" must include("it should be ok")
+      suite.tests.head.toString aka "the example description" must include("it should be ok")
     }
   }
   "A test description" should {
@@ -116,8 +117,8 @@ class junitTestSuiteSpec extends SpecificationWithJUnit {
         override lazy val isExecutedFromMaven = false
       }
       import _root_.junit.framework._
-      case class aTest() extends TestCase("name")
-      description.asDescription(aTest()).toString must beMatching(".*\\(.*\\)")
+      class ATest() extends TestCase("name")
+      description.asDescription(new ATest()).toString must beMatching(".*\\(.*\\)")
     }
   }
   "A sus" should {

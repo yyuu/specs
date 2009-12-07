@@ -23,7 +23,7 @@ import org.scalacheck._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen
 import org.scalacheck.Gen._
-import org.scalacheck.Prop.forAll
+import org.scalacheck.Prop._
 import org.specs.mock._
 import org.specs.io._
 
@@ -74,11 +74,6 @@ class scalacheckMatchersSpec extends MatchersSpecification with ScalaCheckExampl
   "Functions" can {
     "be checked directly, without creating an example, using the verifies operator. startsWith" verifies { (a: String, b: String) => (a+b).startsWith(a) }
   }
-  "A property throwing an exception" should {
-    "display the exception message" in {
-      specWithException.examples(0).failures(0).getMessage must include("Bang")
-    }
-  }
 }
 object spec extends Specification with ScalaCheck {
   dontExpectProperties()
@@ -96,21 +91,18 @@ object specWithFailure extends Specification with ScalaCheck {
   var counter = 0
   forAll((a:Int) => {counter +=1; counter < 10}) must pass
 }
-object specWithException extends Specification with ScalaCheck {
-  forAll((a:Int) => { error("Bang"); a == a }) must pass
-}
 
-trait ScalaCheckExamples extends Specification with ScalaCheck {
+trait ScalaCheckExamples extends ScalaCheck {  this: Specification =>
   val identityProp = forAll((a:Boolean) => a)
-  val alwaysTrueProp = forAll((a:Int) => true)
-  val alwaysTrue: Gen[Boolean] = Gen.oneOf(true)
-  val alwaysFalse = Gen.oneOf(false)
+  val alwaysTrueProp = proved
+  val alwaysTrue = Gen.value(true)
+  val alwaysFalse = Gen.value(false)
   val random = Gen.oneOf(true, false)
-  val exceptionValues = Gen(p => throw new Exception("e"))
+  val exceptionValues = Gen(p => throw new java.lang.Exception("e"))
   val trueFunction = ((x: Boolean) => true)
   val falseFunction = ((x: Boolean) => false)
   val identityAssert: Boolean => Boolean = ((x: Boolean) => x mustBe true)
-  val exceptionProperty = ((x: Boolean) => {throw new Exception("e"); true})
+  val exceptionProperty = ((x: Boolean) => {throw new java.lang.Exception("e"); proved})
 }
 object CounterSpecification extends Commands {
 

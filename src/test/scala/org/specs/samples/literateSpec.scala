@@ -22,6 +22,7 @@ import org.specs.matcher._
 import org.specs.util._
 import org.specs.form._
 import org.specs.runner._
+import org.specs._
 
 class helloWorld extends HtmlSpecification("Hello World") {
   def greet = "hello"
@@ -141,7 +142,7 @@ trait PersonBusinessEntities {
   }
   case class Address(number: Int, street: String)
 }
-trait PersonForms extends HtmlSpecificationWithJUnit with PersonBusinessEntities {
+class PersonForms extends HtmlSpecificationWithJUnit with PersonBusinessEntities {
 
   case class PersonForm(t: String, p: Person) extends Form(t) {
     def this(p: Person) = this("Customer", p)

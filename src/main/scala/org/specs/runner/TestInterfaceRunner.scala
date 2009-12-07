@@ -1,7 +1,7 @@
 package org.specs.runner
 import org.scalatools.testing._
 import org.specs.util._
-
+import org.specs._
 /**
  * Implementation of the Framework interface for the sbt tool.
  * It declares the classes which can be executed by the specs library.

@@ -81,8 +81,8 @@ class reporterSpecification extends TestSpecs {
     }
     "display the failure message next to the corresponding example" in {
       specWithTwoExamples(that.isKo, that.isOk) verifies(messages =>
-            messages.findIndexOf(matches("first failure")) ==
-            messages.findIndexOf(matches("example 2.1 ok")) + 1)
+            messages.indexWhere(matches("first failure")) ==
+            messages.indexWhere(matches("example 2.1 ok")) + 1)
     }
     "report the elapsed time" in {
       specWithOneExample(that.isOk) mustContainMatch "Finished in"
@@ -226,7 +226,7 @@ class specWithTags extends Specification {
 abstract class TestSpecification extends org.specs.Specification with Expectations with MockOutput {
   override val specs = List(this)
 }
-trait Expectations extends org.specs.Specification {
+trait Expectations  { this: org.specs.Specification =>
   val success = () => true mustBe true
   val isSkipped = () => skip("irrelevant")
   val isSkippedBecauseOfAFaultyMatcher = () => 1 must be(0).orSkipExample

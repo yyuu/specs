@@ -24,6 +24,7 @@ import org.scalacheck.Test.{Status, Params, Proved, Passed, Failed, Exhausted, G
 import org.scalacheck.Pretty._
 import org.scalacheck.Pretty
 import org.scalacheck.ConsoleReporter._
+import scala.collection.Map
 import org.specs.io.ConsoleOutput
 import org.specs.matcher._
 import org.specs.matcher.MatcherUtils.q
@@ -46,14 +47,14 @@ trait ScalaCheckMatchers extends ConsoleOutput with ScalaCheckFunctions with Sca
    *
    * @see Expectable
    */
-  implicit val successValueToProp: SuccessValue => Prop = (s: SuccessValue) => Prop.forAll((a: Boolean) => true)
+  implicit val successValueToProp: SuccessValue => Prop = (s: SuccessValue) => Prop.forAll((a: Boolean) => a)
 
    /**
     * default parameters. Uses ScalaCheck default values and doesn't print anything to the console
     */
    implicit def defaultParameters = new Parameters(setParams(Nil))
 
-   /** default parameters to display pretty messages */        
+   /** default parameters to display pretty messages */		   
    val defaultPrettyParams = Pretty.defaultParams
    /**
     * Matches ok if the <code>function T => Boolean</code> returns <code>true</code> for any generated value<br>
@@ -63,13 +64,15 @@ trait ScalaCheckMatchers extends ConsoleOutput with ScalaCheckFunctions with Sca
    def pass[T](g: Gen[T])(implicit params: Parameters) = new Matcher[T => Boolean]() {
      def apply(f: => (T => Boolean)) = checkFunction(g)(f)(params)
    }
-
+   implicit def booleanFunctionToPropFunction[T](f: T => Boolean): T => Prop = (t: T) => {
+     if (f(t)) proved else falsified
+   }
    /**
-    * Matches ok if the <code>function T => Boolean</code> returns <code>true</code> for any generated value<br>
+    * Matches ok if the <code>function T => Prop</code> returns a<code>true</code> Property for any generated value<br>
     * Usage: <code>generated_values must pass(function)</code>
     */
-   def pass[T](f: T => Boolean)(implicit params: Parameters) = new Matcher[Gen[T]](){
-     def apply(g: => Gen[T]) = checkFunction(g)(f)(params)
+   def pass[T](f: T => Prop)(implicit params: Parameters) = new Matcher[Gen[T]](){
+     def apply(g: => Gen[T]) = checkProperty(forAllProp(g)(f))(params)
    }
    /**
     * Matches ok if the <code>function T => Boolean</code> returns <code>true</code> for any generated value<br>
@@ -136,7 +139,7 @@ trait ScalaCheckMatchers extends ConsoleOutput with ScalaCheckFunctions with Sca
      // display the final result if verbose = true
      if (verbose) {
        val s = prettyTestRes(results)(defaultPrettyParams)
-       printf("\r%s %s%s\n", if (results.passed) "+" else "!", s, List.make(70 - s.length, " ").mkString(""))
+       printf("\r%s %s%s\n", if (results.passed) "+" else "!", s, List.fill(70 - s.length)(" ").mkString(""))
      }
 
      results match {
@@ -149,7 +152,7 @@ trait ScalaCheckMatchers extends ConsoleOutput with ScalaCheckFunctions with Sca
        case Result(PropException(args, FailureException(ex), _), n, _, _) =>
          (false, noCounterExample(n), "A counter-example is "+counterExample(args)+": " + ex + " ("+afterNTries(n)+")")
        case r@Result(PropException(m, ex, _), n, _, _) =>
-         (false, noCounterExample(n), ex.getMessage + "\n" + prettyTestRes(r)(defaultPrettyParams))
+         (false, noCounterExample(n), prettyTestRes(r)(defaultPrettyParams))
      }
    }
    // depending on the result, return the appropriate success status and messages

@@ -22,6 +22,7 @@ import org.specs.io.FileSystem
 import java.util.regex._
 import scala.collection.mutable.Queue
 import org.specs.util.Classes
+import org.specs.Specification
 
 /**
  * Companion SpecsFinder object to create a SpecsFinder returning an aggregate Specification of
@@ -43,7 +44,9 @@ case class SpecsFinder(path: String, pattern: String, asOneSpecification: Boolea
     val collected = new scala.collection.mutable.ListBuffer[Specification]
     val specNames = specificationNames(path, pattern)
     specNames foreach { className =>
-      createSpecification(className).foreach { collected.append(_) }
+      createSpecification(className).foreach { 
+    	  collected.append(_) 
+      }
     }
     if (asOneSpecification) {
 	    object totalSpecification extends Specification {

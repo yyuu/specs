@@ -52,6 +52,7 @@ trait OutputReporter extends Reporter with Output {
     if (colorize()) AnsiColors.blue + text + AnsiColors.reset
     else text
 
+
   /** the timer is used to display execution times */
   val timer: Timer
 
@@ -250,7 +251,7 @@ trait OutputReporter extends Reporter with Output {
   private def canReport(hasResults: HasResults) = {
     !failedAndErrorsOnly() || failedAndErrorsOnly() && hasResults.hasFailureOrErrors
   }
-} 
+}
 
 /**
  * Implementation of the <code>OutputReporter</code> with a <code>ConsoleOutput</code>

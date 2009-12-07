@@ -20,6 +20,7 @@ package org.specs.runner
 import org.scalatest.{ Suite, Stopper, Filter, Distributor, Tracker }
 import org.scalatest.events._
 import org.specs.specification._
+import org.specs._
 /**
  * Concrete class for the ScalaTest trait.
  * Usage:<code>
