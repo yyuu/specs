@@ -43,6 +43,13 @@ trait ExpectationsListener {
  * Trait adding the new expectation to an example, creating one if necessary.
  */
 trait ExampleExpectationsListener extends ExpectationsListener {
+  
+  /** 
+   * By default the listener is this. However it may be changed to another listener
+   * when the specification is cloned for isolated execution
+   * @see SpecificationExecutor
+   */
+  var expectationsListener: ExampleExpectationsListener = this
 
   def addExpectation: Examples = addExpectation(None)
 
@@ -58,9 +65,9 @@ trait ExampleExpectationsListener extends ExpectationsListener {
    * </pre>
    */
   def addExpectation[T](expectable: Option[Expectable[T]]): Examples = {
-    lastExample match {
+    expectationsListener.lastExample match {
       case None => {
-        val ex = forExample.addExpectation
+        val ex = expectationsListener.forExample.addExpectation
         expectable.map(_.setExample(ex))
         ex
       }

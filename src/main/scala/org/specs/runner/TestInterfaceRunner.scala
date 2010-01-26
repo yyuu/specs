@@ -12,19 +12,11 @@ class SpecsFramework extends Framework {
     def superClassName = "org.specs.Specification"
     def isModule = false
   }
-  val specificationxClass = new TestFingerprint {
-    def superClassName = "org.spex.Specification"
-    def isModule = false
-  }
   val specificationObject = new TestFingerprint {
     def superClassName = "org.specs.Specification"
     def isModule = true
   }
-  val specificationxObject = new TestFingerprint {
-    def superClassName = "org.spex.Specification"
-    def isModule = true
-  }
-  def tests = Array[TestFingerprint](specificationClass, specificationxClass, specificationObject, specificationxObject)
+  def tests = Array[TestFingerprint](specificationClass, specificationObject)
   def testRunner(classLoader: ClassLoader, loggers: Array[Logger]) = new TestInterfaceRunner(classLoader, loggers)
 }
 
@@ -76,7 +68,7 @@ class TestInterfaceNotifier(handler: EventHandler, loggers: Array[Logger]) exten
  
   var padding = ""
   def incrementPadding = padding += "  " 
-  def decrementPadding = padding = padding.take(padding.size - 2)
+  def decrementPadding = if (padding.size >= 2) padding = padding.take(padding.size - 2)
   def runStarting(examplesCount: Int) = {}
 
   def exampleStarting(exampleName: String) = incrementPadding
@@ -102,6 +94,26 @@ class TestInterfaceNotifier(handler: EventHandler, loggers: Array[Logger]) exten
   }
   def systemStarting(systemName: String) = {
     logInfo(systemName, AnsiColors.blue)
+  }
+  def systemSucceeded(testName: String) = {
+    logStatus(testName, AnsiColors.green, "+")
+    handler.handle(succeeded(testName))
+    decrementPadding
+  }
+  def systemFailed(testName: String, e: Throwable) = {
+    logStatus(testName, AnsiColors.red, "x")
+    handler.handle(failure(testName, e))
+    decrementPadding
+  }
+  def systemError(testName: String, e: Throwable) = {
+    logStatus(testName, AnsiColors.red, "x")
+    handler.handle(error(testName, e))
+    decrementPadding
+  }
+  def systemSkipped(testName: String) = {
+    logStatus(testName, AnsiColors.yellow, "o")
+    handler.handle(skipped(testName))
+    decrementPadding
   }
   def systemCompleted(systemName: String) = {}
 }

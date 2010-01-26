@@ -106,7 +106,7 @@ abstract class Examples(var exampleDescription: ExampleDescription, val parentCy
    */
   def specifyExample(a: =>Any): Unit = {
     execution = Some(new ExampleExecution(this, (ex) => withCurrent(ex) { a }))
-    if (parent.map(_.isSequential).getOrElse(false))
+    if (isSequential)
       executeExamples
   }
   /** increment the number of expectations in this example */
@@ -116,5 +116,15 @@ abstract class Examples(var exampleDescription: ExampleDescription, val parentCy
     val ex = new Example(desc, this)
     addExample(ex)
     ex
+  }
+  /**
+   * set the execution context for a cloned example: tags, filter, beforeFirst failure
+   */
+  override private[specification] def prepareExecutionContextFrom(other: Examples) = {
+    super.prepareExecutionContextFrom(other)
+    other.parentCycle match {
+      case Some(p) => this.beforeSystemFailure = p.beforeSystemFailure
+      case None => ()
+    }
   }
 }

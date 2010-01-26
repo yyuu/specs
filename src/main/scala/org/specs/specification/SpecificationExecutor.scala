@@ -40,19 +40,26 @@ trait SpecificationExecutor extends LifeCycle { this: BaseSpecification with Exa
           case None => example.executeThis
           case Some(s) => {
             s.executeOneExampleOnly = true
+            s.setNotSequential()
             s.expectationsListener = this
+            s.beforeSpecFailure = this.beforeSpecFailure
             s.parent = Some(this)
             val cloned = s.getExample(path)
             cloned match {
               case None => throw PathException(path + "not found for " + example)
               case Some(c) => {
-                c.tagWith(example)
-                c.examplesFilter = example.examplesFilter
+                c.prepareExecutionContextFrom(example)
                 c.execution.map(_.execute)
                 example.copyExecutionResults(c)
               }
             }
             executed = true
+            // Very special case,... (see  issue 106)
+            // If the spec is sequential, the second example of the first system
+            // will have its closure set to the cloned specification, unless
+            // the change below is done
+            if (isSequential)
+              s.setCurrent(Some(this.systems(0)))
           }
         }
       }

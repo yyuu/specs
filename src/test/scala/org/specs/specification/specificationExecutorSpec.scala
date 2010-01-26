@@ -18,6 +18,8 @@
  */
 package org.specs.specification
 import org.specs.util.Configuration
+import org.specs.runner._
+import org.specs.Specification
 
 class specificationExecutorSpec extends org.spex.Specification {
   "An executed specification, with one spec instance per example" should {
@@ -39,7 +41,17 @@ class specificationExecutorSpec extends org.spex.Specification {
           specificationWithChangedConfiguration,
           specificationWithMockito,
           specificationWithANestedSpecification,
-          specificationWithANestedCaseClassSpecification)
+          specificationWithANestedCaseClassSpecification,
+          specificationWithSetSequential,
+          sequentialSpecWithNotifier,
+          specWithSeparateContexts)
+  
+  "A specification for issue 102" should {
+    "not skip an example when run with the NotifierRunner" in {
+      notifiedSpecificationWithJMock.reportSpecs
+      testNotifier.skippedExample aka "the expectation is skipped" must beFalse
+    }
+  }
 }
 object specWithCountedExamples extends org.spex.Specification {
   "first ex" in {
@@ -118,5 +130,129 @@ object specificationWithSubexamples extends org.spex.Specification {
     }
   }
 }
+// from issue 102
+object specificationWithExpectation extends Specification {
+ "An example" should{
+   "assert expectations in example" in {
+     1.isExpectation
+   }
+ }
+ "Another example " should{
+   "be run in complete isolation" in{
+     1 must_== 1
+   }
+ }
+}
+// from issue 105
+object Watcher {
+  var messages = ""
+  var count = 0
+  def reset = { messages = ""; count = 0 }
+  def addMessage(m: String) = { messages += count + "-" + m + "\n"; count +=1 }
+}
+class sequentialSpecification extends Specification {
+  setSequential()
+  var x = 0 
+  "Foo" should {
+    Watcher.addMessage("define ex1")
+    "not go to busyloop" in {
+      Watcher.addMessage("ex1")
+      x must_== 0; x = x + 1
+    }
+    Watcher.addMessage("define ex2")
+    "not go to busyloop2" in {
+      Watcher.addMessage("ex2")
+      Watcher.messages must include("0-define ex1")
+      Watcher.messages must include("1-ex1")
+      x aka "x twice" must_== 0
+    }
+    Watcher.addMessage("define ex3")
+    "have 3 examples" in {
+      Watcher.messages must include("4-define ex2")
+      Watcher.messages must include("6-ex2")
+      x aka "x thrice" must_== 0
+    }
+  }
+}
+class notSequentialSpecification extends Specification {
+  Watcher.reset
+  setNotSequential()
+  "Foo" should {
+    var x = 0 
+    Watcher.addMessage("define ex1")
+    "not go to busyloop" in {
+      Watcher.addMessage("ex1")
+      x must_== 0; x = x + 1
+    }
+    Watcher.addMessage("define ex2")
+    "not go to busyloop2" in {
+      Watcher.messages must include("0-define ex1")
+      Watcher.messages must include("1-define ex2")
+      x aka "x twice" must_== 0
+    }
+  }
+}
+object specificationWithSetSequential extends Specification {
+  "If the spec is sequential, the first example must be executed when defined and there should be no shared variable" in {
+    (new sequentialSpecification).failures must be empty
+  }
+  "If the spec is not sequential, the 2 examples should be defined first, then executed and there should be no shared variable" in {
+    (new notSequentialSpecification).failures must be empty
+  }
+}
 
-
+// from issue 106
+object sequentialSpecWithNotifier extends Specification {
+  testNotifier.reset
+  notifiedSequentialSpecification.reportSpecs
+  "There must be no side-effects" in { testNotifier.failures must be empty }
+  "Examples must only be executed once" in { testNotifier.succeeded must_== 6 }
+}
+// from issue 107
+object specWithSeparateContexts extends Specification {
+  "The first example must not fail" in {
+    testNotifier.reset
+    new NotifierRunner(specWithContexts, testNotifier).reportSpecs
+    testNotifier.failures must be empty
+  }
+}
+object specWithContexts extends ContextDefinition {
+  "sus" ->-(context1) should {
+    "access context1" in {
+      context must be("context1")
+    }
+  }
+  "sus2" ->-(context1) should {
+    "access context1" in{
+      context must be("context1")
+    }
+  }
+}
+trait ContextDefinition extends Specification {
+  var context = "1"
+  val context1 = beforeContext { 
+    context = "context1" 
+  }
+}
+object notifiedSpecWithContexts extends NotifierRunner(specWithContexts, new ConsoleNotifier)
+object notifiedSequentialSpecification extends NotifierRunner(new sequentialSpecification, testNotifier)
+object notifiedSpecificationWithJMock extends NotifierRunner(specificationWithExpectation, testNotifier)
+object testNotifier extends Notifier {
+  var skippedExample = false
+  var failures: List[String] = Nil
+  var errors = 0
+  var succeeded = 0
+  def reset = failures = Nil; errors = 0; succeeded = 0
+  def runStarting(examplesCount: Int) = ()
+  def exampleStarting(exampleName: String)  = ()
+  def exampleSucceeded(testName: String) = {succeeded += 1}
+  def exampleFailed(testName: String, e: Throwable) = failures = failures ::: List(e.getMessage)
+  def exampleError(testName: String, e: Throwable) = errors += 1
+  def exampleSkipped(testName: String) = skippedExample = true
+  def systemStarting(systemName: String) = ()
+  def systemSucceeded(testName: String) = ()
+  def systemFailed(testName: String, e: Throwable) = ()
+  def systemError(testName: String, e: Throwable) = ()
+  def systemSkipped(testName: String) = skippedExample = true
+  def systemCompleted(systemName: String) = ()
+}

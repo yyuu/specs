@@ -19,6 +19,7 @@
 package org.specs.runner
 import org.specs.specification._
 import org.specs._
+import org.specs.util.LazyParameter
 
 /**
  * This is a generic trait for defining a notified object which will know about the state of a run.
@@ -31,6 +32,10 @@ trait Notifier {
   def exampleError(testName: String, e: Throwable)
   def exampleSkipped(testName: String)
   def systemStarting(systemName: String)
+  def systemSucceeded(name: String)
+  def systemFailed(name: String, e: Throwable)
+  def systemError(name: String, e: Throwable)
+  def systemSkipped(name: String)
   def systemCompleted(systemName: String)
 }
 /**
@@ -44,7 +49,7 @@ class NotifierRunner(val specifications: Array[Specification], val notifiers: Ar
     val specToRun = if (specs.size == 1)
                       specs(0)
                     else {
-                      object totalSpecification extends Specification { include(specs:_*) }
+                      object totalSpecification extends Specification { include(specs.map(s => new LazyParameter(() => s)):_*) }
                       totalSpecification
                     }
     
@@ -63,13 +68,33 @@ class NotifierRunner(val specifications: Array[Specification], val notifiers: Ar
   }
   def reportSystem(system: Sus): this.type = {
     notifiers.foreach { _.systemStarting(system.header) }
+    
+    if (!system.ownFailures.isEmpty)
+      notifiers.foreach { notifier =>
+        system.ownFailures.foreach { failure =>
+          notifier.systemFailed(system.description, failure) 
+        }
+      }
+    else if (!system.ownErrors.isEmpty)
+      notifiers.foreach { notifier =>
+        system.ownErrors.foreach { error =>
+          notifier.systemError(system.description, error) 
+        }
+      }
+    else if (!system.ownSkipped.isEmpty)
+      notifiers.foreach { notifier =>
+        system.ownSkipped.foreach { skipped =>
+          notifier.systemSkipped(skipped.getMessage)
+        }
+      }
     for (example <- system.examples)
       reportExample(example)
     notifiers.foreach { _.systemCompleted(system.header) }
     this
   }
-  def reportExample(example: Example): this.type = {
+  def reportExample(example: Examples): this.type = {
     notifiers.foreach { _.exampleStarting(example.description) }
+    
     example.examples.foreach(reportExample(_))
     if (example.isOk)
       notifiers.foreach { _.exampleSucceeded(example.description) }

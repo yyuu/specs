@@ -41,7 +41,7 @@ import org.specs.util.ExtendedThrowable._
  * </ul>
  *  
  */
-trait LifeCycle {
+trait LifeCycle extends SequentialExecution {
   /** lifecycles can be chained via parent-child relationships */
   private[specs] var parent: Option[LifeCycle] = None
   /** 
@@ -51,12 +51,8 @@ trait LifeCycle {
   private[specs] var current: Option[Examples] = None
   /** a predicate which will decide if an example must be re-executed */
   private[specs] var untilPredicate: Option[() => Boolean] = None
-  /** this variable defines if examples should be executed as soon as defined */
-  private[specs] protected var sequential = false
-  /** @return true if if examples should be executed as soon as defined  */
-  def isSequential = sequential
-  /** this variable defines if examples should be executed as soon as defined */
-  def setSequential() = sequential = true
+  /** if this variable is true then the doFirst block is not executed and the example execution must fail */
+  private[specification] var beforeSystemFailure: Option[FailureException] = None
   /** execute a block of code with a specific list of examples as the container to use for examples created by the block */
   private[specs] def withCurrent(ex: Examples)(a: => Any) = {
     val c = current.orElse(parent.flatMap(_.current))
@@ -153,6 +149,18 @@ trait ExampleLifeCycle extends LifeCycle with ExampleStructure {
 /** Default LifeCycle with no actions before or after. */
 object DefaultLifeCycle extends Example("default life cycle")
 
+/** This trait defines if the examples must be executed as soon as they are defined */
+trait SequentialExecution {
+  /** this variable defines if examples should be executed as soon as defined */
+  private[specs] protected var sequential = false
+  /** @return true if if examples should be executed as soon as defined  */
+  def isSequential = sequential
+  /** examples should be executed as soon as defined */
+  def setSequential() = sequential = true
+  /** examples should not be executed as soon as defined */
+  def setNotSequential() = sequential = false
+}
+
 /**
  * This class encapsulates the execution of an example.
  * It will check if the example is tagged for execution ("accepted") and it will execute the expectations as
@@ -183,6 +191,14 @@ class ExampleExecution(var example: Examples, var expectations: Examples => Any)
     var failed = false
     // try the "before" methods. If there is an exception, add an error and return the current example
     try { example.beforeExample(example) } catch {
+      case f: FailureException => {
+        example.addFailure(f)
+        failed = true
+      }
+      case s: SkippedException => {
+        example.addSkipped(s)
+        failed = true
+      }
       case t: Throwable => {
         example.addError(t)
         failed = true
