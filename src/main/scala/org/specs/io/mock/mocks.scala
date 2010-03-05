@@ -93,8 +93,7 @@ trait MockFileSystem extends FileSystem {
   /** overrides the isDirectory definition checking if it ends with / (partial definition) */
   override def isDirectory(path: String) = !isFile(path)
   /** overrides the listFiles definition */
-  override def listFiles(path: String) = children.get(path.replaceAll("\\\\", "/")).map(_.toList).getOrElse(List[String]())
-
+  override def listFiles(path: String) = children.get(path.replaceAll("\\\\", "/")).map(_.toList).getOrElse(Nil)
   /** @return a default file path. All default file paths will be different from each other */
   def defaultFilePath = "name" + files.size + defaultExtension
 

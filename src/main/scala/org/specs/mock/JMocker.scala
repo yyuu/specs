@@ -359,12 +359,12 @@ trait JMocker extends JMockerExampleLifeCycle with HamcrestMatchers with JMockAc
     private var matcher: Option[HamcrestMatcherAdapter[T]] = None
 
     /** the returned value as a ReturnValueAction object */
-    def value = new ReturnValueAction() {
+    def value: Action = new ReturnValueAction(null) {
       override def invoke(i: Invocation) = function match {
         case None => i.getParameter(parameterIndex)
         case Some(f) => f(i.getParameter(parameterIndex).asInstanceOf[T]).asInstanceOf[java.lang.Object]
       }
-    }
+	}
 
     /** this method stores the parameter value and apply the optional matcher */
     def matchesSafely(a: T): Boolean = { 

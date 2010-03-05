@@ -29,7 +29,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.scala-tools.testing</groupId>
   <artifactId>specs_2.8.0.Beta1</artifactId>
-  <version>1.6.3</version>
+  <version>1.6.4-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>${project.artifactId}</name>
   <description>specs is a Behaviour-Driven-Design
@@ -63,7 +63,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
   </developers>
   <properties>
     <scala.version>2.8.0.Beta1</scala.version>
-    <java.src.version>1.6</java.src.version>
+    <java.src.version>1.5</java.src.version>
   </properties>
   <repositories>
     <repository>
@@ -160,25 +160,13 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
     <dependency>
       <groupId>org.scalatest</groupId>
       <artifactId>scalatest</artifactId>
-      <version>1.0.1-for-scala-2.8.0.Beta1-RC7-with-test-interfaces-0.3-SNAPSHOT</version>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>org.easymock</groupId>
-      <artifactId>easymock</artifactId>
-      <version>2.5.1</version>
-      <optional>true</optional>
-    </dependency>
-	<dependency>
-      <groupId>org.easymock</groupId>
-      <artifactId>easymockclassextension</artifactId>
-      <version>2.4</version>
+      <version>0.9.5-2.8</version>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.scala-tools.testing</groupId>
-      <artifactId>scalacheck_2.8.0.Beta1</artifactId>
-      <version>1.7-SNAPSHOT</version>
+      <artifactId>scalacheck</artifactId>
+      <version>1.5-2.8</version>
       <optional>true</optional>
     </dependency>
     <dependency>
@@ -218,7 +206,25 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
       <artifactId>test-interface</artifactId>
       <version>0.4</version>
       <optional>true</optional>
-     </dependency>
+    </dependency>
+	<dependency>
+      <groupId>javax.script</groupId>
+      <artifactId>script-api</artifactId>
+      <version>1.0</version>
+      <optional>true</optional>
+    </dependency>
+	<dependency>
+      <groupId>javax.script</groupId>
+      <artifactId>script-js</artifactId>
+      <version>1.0</version>
+      <optional>true</optional>
+    </dependency>
+	<dependency>
+      <groupId>javax.script</groupId>
+      <artifactId>js-engine</artifactId>
+      <version>1.0</version>
+      <optional>true</optional>
+    </dependency>
   </dependencies>
   <build>
     <sourceDirectory>src/main/scala</sourceDirectory>
