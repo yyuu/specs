@@ -35,6 +35,9 @@ class scalacheckMatchersSpec extends MatchersSpecification with ScalaCheckExampl
     "be ok with a true property" in {
       alwaysTrueProp must pass
     }
+    "be ok with a true function" in {
+      { a: Boolean => true }.forAll must pass
+    }
     "be ko with a false property" in {
       expectation(identityProp must pass) must failWithMatch("A counter-example is 'false' \\(after \\d+ tr(y|ies)\\)")
     }
@@ -56,6 +59,23 @@ class scalacheckMatchersSpec extends MatchersSpecification with ScalaCheckExampl
     "accept properties based on scalacheck commands" in  {
       expectation(CounterSpecification must pass) must failWithMatch("A counter-example is .*")
     }
+  }
+  val constantPair: Gen[(Double, Double)] = Gen.value((0.0, 0.0))
+  "a validate matcher" should {
+    "accept a partial function with an untyped partial function returning a SuccessValue" in {
+      constantPair must validate { case (x, y) => 1 must_== 1 }
+    }
+    "accept a partial function with an untyped partial function returning a boolean" in {
+      constantPair must validate { case (x, y) => true }
+    }
+    "be ko if the partial function is false for some value" in {
+      expectation(constantPair must validate { case (x, y) => x > 1 }) must failWithMatch("A counter-example is .*")
+    }
+  }
+  "a validate matcher" can {
+    "be used with a 'validates' shorthand: gen validates partialFunction" in {
+	  constantPair validates { case (x, y) => true }
+	}
   }
   "A ScalaCheck property" should {
     "not add new expectations during evaluation if isExpectation is off" in {
@@ -95,11 +115,13 @@ object specWithFailure extends Specification with ScalaCheck {
 trait ScalaCheckExamples extends ScalaCheck {  this: Specification =>
   val identityProp = forAll((a:Boolean) => a)
   val alwaysTrueProp = proved
+  val alwaysTrueFunction: Boolean => Boolean = { a: Boolean => true }
   val alwaysTrue = Gen.value(true)
   val alwaysFalse = Gen.value(false)
   val random = Gen.oneOf(true, false)
   val exceptionValues = Gen(p => throw new java.lang.Exception("e"))
   val trueFunction = ((x: Boolean) => true)
+  val partialFunction: PartialFunction[Boolean, Boolean] = { case (x: Boolean) => true }
   val falseFunction = ((x: Boolean) => false)
   val identityAssert: Boolean => Boolean = ((x: Boolean) => x mustBe true)
   val exceptionProperty = ((x: Boolean) => {throw new java.lang.Exception("e"); proved})

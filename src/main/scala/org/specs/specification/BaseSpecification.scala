@@ -19,7 +19,7 @@
 package org.specs.specification
 import org.specs.matcher.MatcherUtils._
 import org.specs.SpecUtils._
-import scala.reflect.Manifest
+import scala.reflect.ClassManifest
 import org.specs.execute._
 import org.specs.util._
 import org.specs.util.Control._
@@ -125,7 +125,8 @@ class BaseSpecification extends TreeNode with SpecificationSystems with Specific
   /** @return the example corresponding to a given Tree path, searching in the incl */
   def getExample(path: TreePath): Option[Examples] = {
     path match {
-      case TreePath(0 :: i :: rest) if systems.size > i => systems(i).getExample(TreePath(rest))
+      case TreePath(0 :: i :: rest) if systems.size > i => 
+        systems(i).getExample(TreePath(rest))
       case _ => None
     }
   }
@@ -142,8 +143,8 @@ class BaseSpecification extends TreeNode with SpecificationSystems with Specific
   }
   class ExampleSpecification(val example: Example) {
     def specifies[T](expectations: =>T) = example.specifies(expectations)
-    def in[T](expectations: =>T)(implicit m: scala.reflect.Manifest[T]) = example.in(expectations)(m)
-    def >>[T](expectations: =>T)(implicit m: scala.reflect.Manifest[T]) = example.>>(expectations)(m)
+    def in[T](expectations: =>T)(implicit m: scala.reflect.ClassManifest[T]) = example.in(expectations)(m)
+    def >>[T](expectations: =>T)(implicit m: scala.reflect.ClassManifest[T]) = example.>>(expectations)(m)
   }
   def forExample(desc: String): Example = {
     specifyExample(desc).example
@@ -191,13 +192,15 @@ class BaseSpecification extends TreeNode with SpecificationSystems with Specific
   /** return true if no examples have been executed in this spec */
   private[specification] def isBeforeAllExamples = !beforeSpecHasBeenExecuted
   /** return true if this example is the last one of the spec */
-  private[specification] def isTheLastExample(ex: Examples) = {
-    !systems.isEmpty && 
+  private[specification] def isTheLastExample(ex: Examples): Boolean = (!ex.hasSubExamples || ex.exampleList.isEmpty)&& isTheLastExample(systems, ex)
+  
+  private def isTheLastExample(parents: List[Examples], ex: Examples): Boolean = {
+    !parents.isEmpty && 
      // if the spec is sequential the last system will not be executed when its last example is executed
      // however this is the right moment to execute the After block
-     (isSequential || systems.last.executed) && 
-    !systems.last.exampleList.isEmpty && 
-     systems.last.exampleList.last == ex
+     (isSequential || parents.last.executed) && 
+    !parents.last.exampleList.isEmpty && 
+     (parents.last.exampleList.last == ex || isTheLastExample(parents.last.exampleList, ex))
   }
   /**
    * override the beforeExample method to execute actions before the
@@ -252,7 +255,7 @@ class BaseSpecification extends TreeNode with SpecificationSystems with Specific
    * in order to execute it in isolation 
    */
   private[specification] var executeOneExampleOnly = false
-    /**
+  /**
    * Syntactic sugar for examples sharing between systems under test.<p>
    * Usage: <code>
    *   "A stack below full capacity" should {
@@ -263,23 +266,38 @@ class BaseSpecification extends TreeNode with SpecificationSystems with Specific
    * Otherwise, an Exception would be thrown, causing the specification failure at construction time.
    */
    object behave {
-    def like(other: Sus): Example = {
+    def like(o: =>Sus): Examples = {
+      val other = o
       val behaveLike: Example = forExample("behave like " + other.description.uncapitalize)
+      def originalExpectationsListener: Option[ExampleExpectationsListener] = other.parent match {
+        case Some(p: ExampleExpectationsListener) => Some(p)
+        case _ => None
+      }
+
       behaveLike.in {
-        other.examples.foreach { o => 
-          val e = behaveLike.createExample(o.description.toString)
-          e.execution = o.execution
-          e.execution.map(_.example = e)
-          e.parent = Some(behaveLike)
-        }
+        originalExpectationsListener.map(_.expectationsListener = outer)
+        other.prepareExecutionContextFrom(behaveLike)
+        other.execution.map(_.execute)
+        behaveLike.copyExecutionResults(other)
+        other.resetForExecution
+        other.exampleList = Nil
+        behaveLike
       }
       behaveLike
     }
-    def like(susName: String): Example = outer.systems.find(_.description == susName) match {
+    def like(susName: String): Examples = outer.systems.find(_.description == susName) match {
       case Some(sus) => this.like(sus)
       case None => throw new Exception(q(susName) + " is not specified in " + outer.name + 
                                          outer.systems.map(_.description).mkString(" (available sus are: ", ", ", ")"))
     }
+  }
+  /** set an example as the current example for this lifecycle and its parent */
+  override private[specs] def setCurrent(ex: Option[Examples]): Unit = {
+    expectationsListener match {
+      case l: LifeCycle if (l != this) => l.setCurrent(ex)
+      case _ => ()
+    }
+    super.setCurrent(ex)
   }
 
   /** @return the first level examples number (i.e. without subexamples) */

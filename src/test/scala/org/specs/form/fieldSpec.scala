@@ -38,7 +38,7 @@ class fieldSpec extends org.spex.Specification {
     "have a toString method displaying the label and value" in {
       Field("label", "value").toString must_== "label: value"
     }
-    "have a toString method formatting Doubles properly" in {
+    "have a toString method formatting Doubles using the US format by default" in {
       Field("label", 1.2345).toString must_== "label: 1.2345"
     }
     "have a toXhtml method returning the formatted value in a <td> cell" in {
@@ -71,7 +71,7 @@ class fieldSpec extends org.spex.Specification {
     }
     "set the bg color of a cell, setting the class attribute to 'none'" in {
       val f = Field("Result", 1.12).valueBgcolor("#FF6699").toXhtml(1)
-      f must ==/(<td class="none" bgcolor="#FF6699">1.12</td>)
+	  f must ==/(<td bgcolor="#FF6699" class="none">1.12</td>)
     }
   }
   "The Field object" can {

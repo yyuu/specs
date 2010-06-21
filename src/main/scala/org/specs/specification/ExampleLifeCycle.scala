@@ -114,17 +114,14 @@ trait ExampleLifeCycle extends LifeCycle with ExampleStructure {
    * for isolated execution
    */
   override def executeExample(ex: Examples): this.type = { 
-    if (!exampleList.isEmpty  && exampleList.head == ex)
-      ex.executeThis
-    else
-      parent.map(_.executeExample(ex)) // forward the execution strategy to the parent 
+    parent.map(_.executeExample(ex)) // forward the execution strategy to the parent 
     this
   }
   /**
    * copy the execution results from another example.
    * This method is used when an example has been executed in isolation in another spec.
    */
-  def copyExecutionResults(other: Examples) = {
+  def copyExecutionResults(other: Examples) {
     copyFrom(other)
     execution.map(_.executed = true)
   }

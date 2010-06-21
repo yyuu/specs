@@ -125,7 +125,7 @@ trait OutputReporter extends Reporter with Output {
    */
   def stats(example: Example): (Int, Int, Int, Int, Int) = {
     if (!planOnly()) {
-     (if (example.examples.isEmpty) 1 else 0, example.expectationsNb, example.failures.size, example.errors.size, example.skipped.size) +
+     (if (example.examples.isEmpty) 1 else 0, example.ownExpectationsNb, example.ownFailures.size, example.ownErrors.size, example.ownSkipped.size) +
      example.examples.foldLeft((0, 0, 0, 0, 0))(_ + stats(_))
     } else
      (1, 0, 0, 0, 0)
@@ -140,7 +140,10 @@ trait OutputReporter extends Reporter with Output {
     def displaySus(s: Sus) = if (systems.toList.size > 1) reportSus(s, padding) else printSus(s, padding)
     systems foreach { s =>
       if (canReport(s) && (!s.examples.isEmpty || s.hasOwnFailureOrErrors)) {
-        displaySus(s)
+        if (s.isAnonymous)
+		  reportExamples(s.examples, padding)
+		else
+		  displaySus(s)
       }
     }
   }

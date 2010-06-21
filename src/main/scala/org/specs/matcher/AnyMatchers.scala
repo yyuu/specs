@@ -27,7 +27,7 @@ import org.specs.util.Classes._
 import org.specs.collection.ExtendedIterable._
 import scala.collection.immutable.{Set => Removed}
 import scala.collection.Set
-import scala.reflect.Manifest
+import scala.reflect.ClassManifest
 import org.specs.execute._
 
 /**
@@ -86,9 +86,14 @@ trait AnyBaseMatchers {
       val (x, y) = (a, v)
       var dy = d(y)
       var qx = q(x)
+   	  var differentTypesWarning = ""
       if (dy == qx) {
-        dy = dy + ": " + getClassName(y)
-        qx = qx + ": " + getClassName(x)
+	    val xClass = getClassName(x)
+	    val yClass = getClassName(y)
+	    if (xClass != yClass) {
+          dy = dy + ": " + yClass
+          qx = qx + ": " + xClass
+	    } else differentTypesWarning = ". Values have the same string representation but possibly different types like List[Int] and List[String]"
       }
       import org.specs.util.Products._
       def isNull[T](a: T) = null == a
@@ -97,7 +102,7 @@ trait AnyBaseMatchers {
         case full: fullDetails if (!isNull(x) && full.startDiffSize <= x.toString.size) => {
           EditMatrix(dy, qx).showDistance(full.separators, full.shortenSize).toList.mkString(" is not equal to ")
         }
-        case _ => dy + " is not equal to " + qx
+        case _ => dy + " is not equal to " + qx + differentTypesWarning
       }
       ((x == y), dy + " is equal to " + qx, failureMessage)
     }
@@ -265,12 +270,12 @@ trait AnyBaseMatchers {
    * <br>Otherwise rethrow any other exception
    * <br>Usage: <code>value must throwA[SpecialException]</code>
    */
-  def throwAnException[E <: Throwable](implicit m: Manifest[E]): ExceptionClassMatcher[E] = new ExceptionClassMatcher[E](m.erasure.asInstanceOf[Class[E]])
+  def throwAnException[E <: Throwable](implicit m: ClassManifest[E]): ExceptionClassMatcher[E] = new ExceptionClassMatcher[E](m.erasure.asInstanceOf[Class[E]])
 
   /**
    * return a matcher which will be ok if an exception of that type is thrown
    */
-  def throwA[E <: Throwable](implicit m: Manifest[E]): ExceptionClassMatcher[E] = throwAnException[E]
+  def throwA[E <: Throwable](implicit m: ClassManifest[E]): ExceptionClassMatcher[E] = throwAnException[E]
   /**
    * @see throwException description
    */
@@ -278,7 +283,7 @@ trait AnyBaseMatchers {
   /**
    * return a matcher which will be ok if an exception of that type is thrown
    */
-  def throwAn[E <: Throwable](implicit m: Manifest[E]): ExceptionClassMatcher[E] = throwAnException[E]
+  def throwAn[E <: Throwable](implicit m: ClassManifest[E]): ExceptionClassMatcher[E] = throwAnException[E]
   /**
    * Alias for throwA(new Exception)
    * @see throwException description
@@ -386,7 +391,7 @@ trait AnyBaseMatchers {
   /**
    * Matches if v.getClass == c
    */
-  def haveClass[T](implicit m: Manifest[T]) = new Matcher[Any](){
+  def haveClass[T](implicit m: ClassManifest[T]) = new Matcher[Any](){
     def apply(v: =>Any) = {
       val x: Any = v
       val c = m.erasure
@@ -398,12 +403,12 @@ trait AnyBaseMatchers {
   /**
    * Matches if v.getClass != c
    */
-  def notHaveClass[T](implicit m: Manifest[T]) = haveClass(m).not
+  def notHaveClass[T](implicit m: ClassManifest[T]) = haveClass(m).not
 
   /**
    * Matches if v.isAssignableFrom(c)
    */
-  def beAssignableFrom[T](implicit m: Manifest[T]) = new Matcher[Class[_]](){
+  def beAssignableFrom[T](implicit m: ClassManifest[T]) = new Matcher[Class[_]](){
     def apply(v: =>Class[_]) = {
       val x: Class[_] = v
       val c = m.erasure
@@ -414,12 +419,12 @@ trait AnyBaseMatchers {
   /**
    * Matches if v.isAssignableFrom(c)
    */
-  def notBeAssignableFrom[T](implicit m: Manifest[T]) = beAssignableFrom(m).not
+  def notBeAssignableFrom[T](implicit m: ClassManifest[T]) = beAssignableFrom(m).not
 
   /**
    * Matches if c.isAssignableFrom(v)
    */
-  def haveSuperClass[T](implicit m: Manifest[T]) = new Matcher[Any](){
+  def haveSuperClass[T](implicit m: ClassManifest[T]) = new Matcher[Any](){
     def apply(v: =>Any) = {
       val x: Any = v
       val c = m.erasure
@@ -431,7 +436,7 @@ trait AnyBaseMatchers {
   /**
    * Matches if c.isAssignableFrom(v)
    */
-  def notHaveSuperClass[T](implicit m: Manifest[T]) = haveSuperClass(m).not
+  def notHaveSuperClass[T](implicit m: ClassManifest[T]) = haveSuperClass(m).not
 
   /**
    * Adds functionalities to functions returning matchers so that they can be combined before taking a value and
@@ -587,9 +592,9 @@ trait AnyBeHaveMatchers { this: AnyBaseMatchers =>
     def asNullAs(a: =>T) = result.matchWith(beAsNullAs(a))
     def in(iterable: =>Iterable[T]) = result.matchWith(beIn(iterable))
     def oneOf(t: T*) = result.matchWith(beOneOf(t:_*))
-    def throwA[E <: Throwable](implicit m: Manifest[E]) = result.matchWith(throwAnException[E](m))
+    def throwA[E <: Throwable](implicit m: ClassManifest[E]) = result.matchWith(throwAnException[E](m))
     def throwA[E <: Throwable](e: E) = result.matchWith(throwException(e))
-    def throwAn[E <: Throwable](implicit m: Manifest[E]) = result.matchWith(throwAnException[E](m))
+    def throwAn[E <: Throwable](implicit m: ClassManifest[E]) = result.matchWith(throwAnException[E](m))
     def throwAn[E <: Throwable](e: E) = result.matchWith(throwException(e))
   }
   /** implicit definition to add 'empty' matchers */
@@ -628,11 +633,16 @@ class BeEqualTo[T](a: =>T) extends Matcher[T] {
     val (x, y) = (a, v)
     var dy = d(y)
     var qx = q(x)
+   	var differentTypesWarning = ""
     if (dy == qx) {
-      dy = dy + ": " + getClassName(y)
-      qx = qx + ": " + getClassName(x)
-    }
-    (x == y, dy + " is equal to " + qx, dy + " is not equal to " + qx)
+	  val xClass = getClassName(x)
+	  val yClass = getClassName(y)
+	  if (xClass != yClass) {
+        dy = dy + ": " + yClass
+        qx = qx + ": " + xClass
+	  } else differentTypesWarning = ". Values have the same string representation but possibly different types like List[Int] and List[String]"
+	}
+    (x == y, dy + " is equal to " + qx, dy + " is not equal to " + qx + differentTypesWarning)
   }
 }
 class BeNull[T] extends Matcher[T] {

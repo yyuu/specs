@@ -85,12 +85,12 @@ object jmockGoodSpecification extends Mocked {
       expect { 1.of(list).get(anyInt) }
       list.get(0)
     }
+    class Param(name: String)
+    class ToMockWithParams { def method(p: Param*) = () }
     "provide an any[Type] matcher which can match any parameter of a given type with vargs" in {
-      case class Param(name: String)
-      trait ToMock { def method(p: Param*) = () }
-      val mocked: ToMock = mock[ToMock]
+      val mocked: ToMockWithParams = mock[ToMockWithParams]
       expect { 1.of(mocked).method(any[Param]) }
-      mocked.method(Param("hello"))
+      mocked.method(new Param("hello"))
     }
     "provide an a[T] matcher which can be used to specify that any instance of type T will match - alias an[T]" in {
       val listString: List[String] = mock[List[String]]
@@ -107,8 +107,8 @@ object jmockGoodSpecification extends Mocked {
       expect { 1.of(list).get(equal(0)) }
       list.get(0)
     }
+    class ParamMock { def method(p1: Int, p2: Int) = () }
     "provide an equal matcher which can be used to specify that a specific value will be used as a parameter - with 2 paramters" in {
-      trait ParamMock { def method(p1: Int, p2: Int) = () }
       val mocked: ParamMock = mock[ParamMock]
       expect { 1.of(mocked).method(equal(0), equal(1)) }
       mocked.method(0, 1)
