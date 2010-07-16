@@ -14,20 +14,20 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.matcher
 
 import org.specs.specification._
 import org.specs.matcher.MatcherUtils.{q, matches}
 import org.specs.matcher.PatternMatchers._
-import org.specs.ExtendedThrowable._
+import org.specs.util.ExtendedThrowable._
 import org.specs.util.EditDistance._
 import org.specs.util.Classes._
 import org.specs.collection.ExtendedIterable._
 import scala.collection.immutable.{Set => Removed}
 import scala.collection.Set
-import scala.reflect.Manifest
+import scala.reflect.ClassManifest
 import org.specs.execute._
 
 /**
@@ -86,14 +86,23 @@ trait AnyBaseMatchers {
       val (x, y) = (a, v)
       var dy = d(y)
       var qx = q(x)
+   	  var differentTypesWarning = ""
       if (dy == qx) {
-        dy = dy + ": " + getClassName(y)
-        qx = qx + ": " + getClassName(x)
+	    val xClass = getClassName(x)
+	    val yClass = getClassName(y)
+	    if (xClass != yClass) {
+          dy = dy + ": " + yClass
+          qx = qx + ": " + xClass
+	    } else differentTypesWarning = ". Values have the same string representation but possibly different types like List[Int] and List[String]"
       }
-      import org.specs.Products._
+      import org.specs.util.Products._
+      def isNull[T](a: T) = null == a
+
       val failureMessage = details match {
-        case full: fullDetails => EditMatrix(dy, qx).showDistance(full.separators).toList.mkString(" is not equal to ")
-        case no: noDetails => dy + " is not equal to " + qx
+        case full: fullDetails if (!isNull(x) && full.startDiffSize <= x.toString.size) => {
+          EditMatrix(dy, qx).showDistance(full.separators, full.shortenSize).toList.mkString(" is not equal to ")
+        }
+        case _ => dy + " is not equal to " + qx + differentTypesWarning
       }
       ((x == y), dy + " is equal to " + qx, failureMessage)
     }
@@ -119,9 +128,7 @@ trait AnyBaseMatchers {
   /**
    * Matches if b is null
    */
-  def beNull[T] = new Matcher[T](){
-    def apply(v: =>T) = { val b = v; (b == null, description.getOrElse("the value") + " is null", d(b) + " is not null") }
-  }
+  def beNull[T] = new BeNull[T]
   /**
    * Alias for beNull
    */
@@ -263,12 +270,12 @@ trait AnyBaseMatchers {
    * <br>Otherwise rethrow any other exception
    * <br>Usage: <code>value must throwA[SpecialException]</code>
    */
-  def throwAnException[E <: Throwable](implicit m: Manifest[E]): ExceptionClassMatcher[E] = new ExceptionClassMatcher[E](m.erasure.asInstanceOf[Class[E]])
+  def throwAnException[E <: Throwable](implicit m: ClassManifest[E]): ExceptionClassMatcher[E] = new ExceptionClassMatcher[E](m.erasure.asInstanceOf[Class[E]])
 
   /**
    * return a matcher which will be ok if an exception of that type is thrown
    */
-  def throwA[E <: Throwable](implicit m: Manifest[E]): ExceptionClassMatcher[E] = throwAnException[E]
+  def throwA[E <: Throwable](implicit m: ClassManifest[E]): ExceptionClassMatcher[E] = throwAnException[E]
   /**
    * @see throwException description
    */
@@ -276,7 +283,7 @@ trait AnyBaseMatchers {
   /**
    * return a matcher which will be ok if an exception of that type is thrown
    */
-  def throwAn[E <: Throwable](implicit m: Manifest[E]): ExceptionClassMatcher[E] = throwAnException[E]
+  def throwAn[E <: Throwable](implicit m: ClassManifest[E]): ExceptionClassMatcher[E] = throwAnException[E]
   /**
    * Alias for throwA(new Exception)
    * @see throwException description
@@ -326,13 +333,13 @@ trait AnyBaseMatchers {
        (isThrown(value, exception, (e => exception.getClass == e.getClass && exception.getMessage == e.getMessage), description).isDefined,
         okMessage(exception, description), koMessage(exception, description))
      }
-     def like(f: =>PartialFunction[Throwable, Boolean]) = new Matcher[Any](){
+     def like(f: =>PartialFunction[E, Boolean]) = new Matcher[Any](){
        def apply(v: => Any) = {
          val thrown = isThrown(v, exception, (e => exception.getClass.isAssignableFrom(e.getClass)), description)
          if (!thrown.isDefined)
            (false, okMessage(exception, description), koMessage(exception, description))
          else
-           beLike(f)(thrown.get)
+           beLike(f)(thrown.get.asInstanceOf[E])
        }
      }
   }
@@ -384,7 +391,7 @@ trait AnyBaseMatchers {
   /**
    * Matches if v.getClass == c
    */
-  def haveClass[T](implicit m: Manifest[T]) = new Matcher[Any](){
+  def haveClass[T](implicit m: ClassManifest[T]) = new Matcher[Any](){
     def apply(v: =>Any) = {
       val x: Any = v
       val c = m.erasure
@@ -396,12 +403,12 @@ trait AnyBaseMatchers {
   /**
    * Matches if v.getClass != c
    */
-  def notHaveClass[T](implicit m: Manifest[T]) = haveClass(m).not
+  def notHaveClass[T](implicit m: ClassManifest[T]) = haveClass(m).not
 
   /**
    * Matches if v.isAssignableFrom(c)
    */
-  def beAssignableFrom[T](implicit m: Manifest[T]) = new Matcher[Class[_]](){
+  def beAssignableFrom[T](implicit m: ClassManifest[T]) = new Matcher[Class[_]](){
     def apply(v: =>Class[_]) = {
       val x: Class[_] = v
       val c = m.erasure
@@ -412,12 +419,12 @@ trait AnyBaseMatchers {
   /**
    * Matches if v.isAssignableFrom(c)
    */
-  def notBeAssignableFrom[T](implicit m: Manifest[T]) = beAssignableFrom(m).not
+  def notBeAssignableFrom[T](implicit m: ClassManifest[T]) = beAssignableFrom(m).not
 
   /**
    * Matches if c.isAssignableFrom(v)
    */
-  def haveSuperClass[T](implicit m: Manifest[T]) = new Matcher[Any](){
+  def haveSuperClass[T](implicit m: ClassManifest[T]) = new Matcher[Any](){
     def apply(v: =>Any) = {
       val x: Any = v
       val c = m.erasure
@@ -429,7 +436,7 @@ trait AnyBaseMatchers {
   /**
    * Matches if c.isAssignableFrom(v)
    */
-  def notHaveSuperClass[T](implicit m: Manifest[T]) = haveSuperClass(m).not
+  def notHaveSuperClass[T](implicit m: ClassManifest[T]) = haveSuperClass(m).not
 
   /**
    * Adds functionalities to functions returning matchers so that they can be combined before taking a value and
@@ -585,9 +592,9 @@ trait AnyBeHaveMatchers { this: AnyBaseMatchers =>
     def asNullAs(a: =>T) = result.matchWith(beAsNullAs(a))
     def in(iterable: =>Iterable[T]) = result.matchWith(beIn(iterable))
     def oneOf(t: T*) = result.matchWith(beOneOf(t:_*))
-    def throwA[E <: Throwable](implicit m: Manifest[E]) = result.matchWith(throwAnException[E](m))
+    def throwA[E <: Throwable](implicit m: ClassManifest[E]) = result.matchWith(throwAnException[E](m))
     def throwA[E <: Throwable](e: E) = result.matchWith(throwException(e))
-    def throwAn[E <: Throwable](implicit m: Manifest[E]) = result.matchWith(throwAnException[E](m))
+    def throwAn[E <: Throwable](implicit m: ClassManifest[E]) = result.matchWith(throwAnException[E](m))
     def throwAn[E <: Throwable](e: E) = result.matchWith(throwException(e))
   }
   /** implicit definition to add 'empty' matchers */
@@ -626,10 +633,18 @@ class BeEqualTo[T](a: =>T) extends Matcher[T] {
     val (x, y) = (a, v)
     var dy = d(y)
     var qx = q(x)
+   	var differentTypesWarning = ""
     if (dy == qx) {
-      dy = dy + ": " + getClassName(y)
-      qx = qx + ": " + getClassName(x)
-    }
-    (x == y, dy + " is equal to " + qx, dy + " is not equal to " + qx)
+	  val xClass = getClassName(x)
+	  val yClass = getClassName(y)
+	  if (xClass != yClass) {
+        dy = dy + ": " + yClass
+        qx = qx + ": " + xClass
+	  } else differentTypesWarning = ". Values have the same string representation but possibly different types like List[Int] and List[String]"
+	}
+    (x == y, dy + " is equal to " + qx, dy + " is not equal to " + qx + differentTypesWarning)
   }
+}
+class BeNull[T] extends Matcher[T] {
+  def apply(v: =>T) = { val b = v; (b == null, description.getOrElse("the value") + " is null", d(b) + " is not null") }
 }

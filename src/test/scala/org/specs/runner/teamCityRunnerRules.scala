@@ -14,16 +14,16 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.runner
 import org.specs.specification._
 import org.specs.io.mock._
 import org.specs.util.Property
+import org.specs._
 
 class teamCityRunnerRules extends HtmlSpecificationWithJUnit("Team city runner") {
   override def htmlDir = "target"
-  detailedDiffs()
   def clearDetails(messages: Seq[String]) = messages.map(_.replaceAll("details='.*'", "details='exception stacktrace'"))
   val message: Property[String] = Property("")
   val messages: Property[List[String]] = Property[List[String]](Nil)
@@ -31,8 +31,8 @@ class teamCityRunnerRules extends HtmlSpecificationWithJUnit("Team city runner")
   def messagesMustBeCreated = clearDetails(runSpec.messages) must containInOrder(messages())
   def runSpec = (new TeamCityRunner(testingSpecification) with MockOutput).reportSpecs
 } 
-object testingSpecification extends Specification("specification name") {
 
+object testingSpecification extends Specification("specification name") {
   "sus1 description" should {
     "good example" in { true must beTrue }
     "failed example" in { true must beFalse }

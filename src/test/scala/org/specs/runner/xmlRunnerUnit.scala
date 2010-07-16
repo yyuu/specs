@@ -14,13 +14,13 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
-
 package org.specs.runner
 import org.specs.specification._
 import org.specs.util.DataTables
 import org.specs.Sugar._
+import org.specs._
 
 class xmlRunnerUnit extends SpecificationWithJUnit with DataTables with Html {
   override def htmlDir = "target"

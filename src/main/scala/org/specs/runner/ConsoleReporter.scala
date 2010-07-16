@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.runner
 import org.specs.io._
@@ -23,10 +23,9 @@ import org.specs.specification._
 import org.specs.util._
 import org.specs._
 import org.specs.specification._
-import org.specs.ExtendedThrowable._
+import org.specs.util.ExtendedThrowable._
 import org.specs.execute._
 import org.specs.util.Plural._
-import org.specs.literate._
 /**
  * This trait reports the result of a specification on a simple <code>Output</code>
  * which must support <code>print</code>-like methods
@@ -46,6 +45,11 @@ trait OutputReporter extends Reporter with Output {
   /** colors the text in yellow if colors are enabled   */
   def skipColored(text: String) =
     if (colorize()) AnsiColors.yellow + text + AnsiColors.reset
+    else text
+
+  /** colors the text in blue if colors are enabled   */
+  def infoColored(text: String) =
+    if (colorize()) AnsiColors.blue + text + AnsiColors.reset
     else text
 
 
@@ -120,8 +124,11 @@ trait OutputReporter extends Reporter with Output {
    * by collecting those numbers on this example and on sub-examples
    */
   def stats(example: Example): (Int, Int, Int, Int, Int) = {
-    (if (example.examples.isEmpty) 1 else 0, example.expectationsNb, example.failures.size, example.errors.size, example.skipped.size) +
-    example.examples.foldLeft((0, 0, 0, 0, 0))(_ + stats(_))
+    if (!planOnly()) {
+     (if (example.examples.isEmpty) 1 else 0, example.ownExpectationsNb, example.ownFailures.size, example.ownErrors.size, example.ownSkipped.size) +
+     example.examples.foldLeft((0, 0, 0, 0, 0))(_ + stats(_))
+    } else
+     (1, 0, 0, 0, 0)
   }
 
   /**
@@ -132,8 +139,11 @@ trait OutputReporter extends Reporter with Output {
   def reportSystems(systems: Iterable[Sus], padding: String) = {
     def displaySus(s: Sus) = if (systems.toList.size > 1) reportSus(s, padding) else printSus(s, padding)
     systems foreach { s =>
-      if (canReport(s) && !s.examples.isEmpty) {
-        displaySus(s)
+      if (canReport(s) && (!s.examples.isEmpty || s.hasOwnFailureOrErrors)) {
+        if (s.isAnonymous)
+		  reportExamples(s.examples, padding)
+		else
+		  displaySus(s)
       }
     }
   }
@@ -151,14 +161,15 @@ trait OutputReporter extends Reporter with Output {
    * prints one sus specification
    */
   def printSus(sus: Sus, padding: String) = {
-    var susDescription = if (sus.isAnonymous) "" else sus.description + " " + sus.verb  
-    if (!sus.ownSkipped.isEmpty)
-      println(padding + susDescription + sus.ownSkipped.firstOption.map(" (skipped: " + _.getMessage + ")").getOrElse(""))
+    var susDescription = if (sus.isAnonymous) "" else sus.header
+
     if (!sus.literateDesc.isEmpty) 
       println(padding + sus.literateDescText)
     else
       println(padding + susDescription)
     timer.start
+    if (!planOnly() && sus.hasOwnFailureOrErrors)
+      reportExample(sus, padding)
     reportExamples(sus.examples, padding)
     timer.stop
     println("")
@@ -196,16 +207,19 @@ trait OutputReporter extends Reporter with Output {
   def reportExamples(examples: Iterable[Example], padding: String): Unit = {
     for (example <- examples) {
       reportExample(example, padding)
-      reportExamples(example.examples, padding + "  ")
+      if (!planOnly())
+        reportExamples(example.examples, padding + "  ")
     }
   }
 
   /**
    * reports one example: + if it succeeds, x if it fails, its description, its failures or errors
    */
-  def reportExample(example: Example, padding: String) = {
-    def status(example: Example) = {
-      if (example.hasFailureOrErrors)
+  def reportExample(example: Examples, padding: String) = {
+    def status(example: Examples) = {
+      if (planOnly())
+        infoColored("-")
+      else if (example.hasFailureOrErrors)
         failureColored("x")
       else if (example.skipped.size > 0)
         skipColored("o")
@@ -213,14 +227,14 @@ trait OutputReporter extends Reporter with Output {
         successColored("+")
     }
 
-    if (canReport(example))
+    if (planOnly() || canReport(example))
       println(padding + status(example) + " " + example.description)
 
     // if the failure, skip or the error message has linefeeds they must be padded too
     def parens(f: Throwable) = " (" + f.location + ")"
 
     // only print out the example messages if there are no subexamples.
-    if (example.examples.isEmpty) {
+    if (!planOnly() && example.examples.isEmpty) {
       def errorType(t: Throwable) = t match {
         case s: SkippedException => ""
         case f: FailureException => ""

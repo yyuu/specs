@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.runner
 import org.specs._
@@ -28,34 +28,66 @@ class notifierSpec extends SpecificationWithJUnit with Mockito {
   "A notifier for a specification" should beNotifiedOf { 
     new NotifierRunner(s, notifier).reportSpecs
     "the start of a run with the total number of examples" in {
-      notifier.runStarting(5) was called
+      there was one(notifier).runStarting(5)
     }
     "the start of a system" in {
-      notifier.systemStarting("system1 should") was called
+      there was one(notifier).systemStarting("system1 should")
+    }
+    "the failure of a system" in {
+      there was one(notifier).systemFailed("system1", new FailureException("sus failed")) 
     }
     "the start of an example" in {
-      notifier.exampleStarting("ex1-1") was called
+      there was one(notifier).exampleStarting("ex1-1") 
     }
     "the success of an example" in {
-      notifier.exampleSucceeded("ex1-1") was called
+      there was one(notifier).exampleSucceeded("ex1-1") 
     }
     "the failure of an example" in {
-      notifier.exampleFailed("ex1-2", new FailureException("wrong")) was called
+      there was one(notifier).exampleFailed("ex1-2", new FailureException("wrong"))
     }
     "the error of an example" in {
-      notifier.exampleError(is_==("ex2-2"), is_==("bad") ^^ ((_.getMessage))) was called
+      there was one(notifier).exampleError(is_==("ex2-2"), is_==("bad") ^^ ((e:Throwable) => e.getMessage))
     }
     "a skipped example" in {
-      notifier.exampleSkipped("ex2-3") was called
+      there was one(notifier).exampleSkipped("ex2-3")
     }
     "the end of a system" in {
-      notifier.systemCompleted("system1 should") was called
+      there was one(notifier).systemCompleted("system1 should")
     }
+  }
+  "A notifier for a specification with an anonymous spec" should { 
+    new NotifierRunner(specWithAnAnonymousSpec, notifier).reportSpecs
+    "not be notified of the anonymous sus" in {
+      there was no(notifier).systemStarting(specWithAnAnonymousSpec.systems(0).header)
+    }
+  }
+  "A notifier for a planOnly specification" should beNotifiedOf { 
+    "only the systems and examples when a specification" in {
+      s.planOnly(true)
+      new NotifierRunner(s, notifier).reportSpecs
+      there was no(notifier).exampleSucceeded("ex1-1")
+    }
+    "only the systems and examples even of a subspecification" in {
+      object s extends Specification {
+        object included extends Specification {
+          "ex1" in { 1 must_== 1 }
+        }
+        setPlanOnly()
+        include(included)
+      }
+      new NotifierRunner(s, notifier).reportSpecs
+      there was no(notifier).exampleSucceeded("ex1")
+    }
+  }
+  val specWithAnAnonymousSpec = new Specification {
+    "ex1" in { 1 must_== 1 }
+    "ex2" in { 1 must_== 1 }
   }
   val s = new Specification {
     "system1"  should {
       "ex1-1" in { 1 must_== 1 }
       "ex1-2" in { fail("wrong") }
+      fail("sus failed"); ()
     }
     "system2"  should {
       "ex2-1" in { 1 must_== 1 }
@@ -63,5 +95,5 @@ class notifierSpec extends SpecificationWithJUnit with Mockito {
       "ex2-3" in { skip("skip this one") }
     }
   }
-  def beNotifiedOf(a : =>Example) = { addToSusVerb(" be notified of "); a }
+  def beNotifiedOf = addToSusVerb(" be notified of ")
 }

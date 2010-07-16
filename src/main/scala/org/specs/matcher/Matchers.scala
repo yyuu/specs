@@ -14,14 +14,15 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.matcher
 
 import org.specs._
 import org.specs.specification._
 import org.specs.collection.ExtendedIterable._
-import org.specs.ExtendedThrowable._
+import org.specs.util.ExtendedThrowable._
+import org.specs.util.Duration
 import org.specs.matcher.MatcherUtils._
 import org.specs.execute._
 import scala.xml.Node
@@ -40,10 +41,12 @@ trait Matchers extends AnyMatchers with
                        IterableMatchers with
                        MapMatchers with
                        NumericMatchers with
+                       EitherMatchers with
                        PatternMatchers with 
                        XmlMatchers with 
                        FileMatchers with 
-                       MatcherResult
+                       MatcherResult with 
+                       EventuallyMatchers
 /**
  * <p>The <code>BaseMatchers</code> trait provides all existing Matchers to the 
  * <code>Specification</code> trait</p> 
@@ -55,10 +58,12 @@ trait BaseMatchers extends AnyBaseMatchers with
                            IterableBaseMatchers with
                            MapBaseMatchers with
                            NumericBaseMatchers with
+                           EitherBaseMatchers with
                            PatternBaseMatchers with 
                            XmlBaseMatchers with 
                            FileBaseMatchers with 
-                           MatcherResult
+                           MatcherResult with 
+                           EventuallyMatchers
                        
 /**
  * <p>The <code>AbstractMatcher</code> class is the base class for Matchers.
@@ -248,6 +253,31 @@ abstract class Matcher[-T] extends AbstractMatcher[T] with MatcherResult { outer
    *  Alias for orSkipExample
    */   
   def orSkip = orSkipExample
+  
+  /**
+   * @return a matcher that needs to eventually match, after 40 retries and a sleep time of 100 milliseconds
+   */
+  def eventually: Matcher[T] = EventuallyMatchers.eventually(this)
+  /**
+   * @return a matcher that needs to eventually match, after a given number of retries and a sleep time
+   */
+  def eventually(retries: Int, sleep: Duration): Matcher[T] = EventuallyMatchers.eventually(retries, sleep)(this)
+  /** 
+   * @return a matcher that matches all elements of an iterable
+   */
+  def toIterable = new Matcher[Iterable[T]]() {
+    type Result = (Boolean, String, String)
+    
+    def apply(v: =>Iterable[T]) = ((true, "", "") /: v) { (res: Result, cur: T) =>
+      val currentRes = outer(cur)
+      if (currentRes._1) 
+        (res._1 && currentRes._1, append(res._2, " and ", currentRes._2),  append(res._3, " and ", currentRes._2))
+      else
+        (res._1 && currentRes._1, append(res._2, " and ", currentRes._2),  append(res._2, " but ", currentRes._3))
+    }
+  }
+  private def append(first: String, separator: String, second: String) = 
+      first + (if (first.isEmpty) "" else separator) + second
 }
 /**
  * Result of <code>Matcher.apply</code>. Provides a method named 'success' to get the result
@@ -270,7 +300,7 @@ class NotMatcher[T] extends Matcher[T] {
 }
 class BeVerbMatcher[T] extends OkWordMatcher[T] { 
   def apply(v: =>T) = (true, "", "")
-  def ==/(node: Iterable[Node]) = new EqualIgnoringSpaceMatcher(node)
+  def ==/(node: Seq[Node]) = new EqualIgnoringSpaceMatcher(node)
   def ==/(s: String) = new BeEqualToIgnoringCase(s)
   def !=/(s: String) = new BeEqualToIgnoringCase(s).not
   def <[T](n: T)(implicit d: T => Double, e: T => Ordered[T]) = new BeLessThan(n) 

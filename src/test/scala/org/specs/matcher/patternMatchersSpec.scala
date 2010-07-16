@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.matcher
 import org.specs.Sugar._
@@ -54,6 +54,11 @@ class patternMatchersSpec extends MatchersSpecification {
       List(2).find {_ == 2} must beSome[Int]
       List(2).find {_ == 2} must beSomething
       expectation(List().find {_ == 2} must beSomething) must failWith("'None' is not Some(x)")
+    }
+    "provide a beSome(value) matcher checking the value of an option" in {
+      List(2).find {_ == 2} must beSome(2)
+      expectation(List().find {_ == 2} must beSome(2)) must failWith("'None' is not 'Some(2)'")
+      expectation(List(2).find {_ == 2} must beSome(3)) must failWith("'Some(2)' is not 'Some(3)'")
     }
     "provide a be like matcher" in {
       "a" must be like { case "a" => ok }

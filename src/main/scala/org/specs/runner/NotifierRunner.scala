@@ -14,10 +14,12 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.runner
 import org.specs.specification._
+import org.specs._
+import org.specs.util.LazyParameter
 
 /**
  * This is a generic trait for defining a notified object which will know about the state of a run.
@@ -29,64 +31,98 @@ trait Notifier {
   def exampleFailed(testName: String, e: Throwable)
   def exampleError(testName: String, e: Throwable)
   def exampleSkipped(testName: String)
+  def exampleCompleted(exampleName: String)
   def systemStarting(systemName: String)
+  def systemSucceeded(name: String)
+  def systemFailed(name: String, e: Throwable)
+  def systemError(name: String, e: Throwable)
+  def systemSkipped(name: String)
   def systemCompleted(systemName: String)
 }
 /**
  * This reporter reports specification by executing them and specifying the results to Notifiers.
  */
-class NotifierRunner(val specs: Array[Specification], val notifiers: Array[Notifier]) extends Reporter {
+class NotifierRunner(val specifications: Array[Specification], val notifiers: Array[Notifier]) extends Reporter {
+  val specs = specifications.toList
   def this(s: Specification, n: Notifier) = this(Array(s), Array(n))
   override def report(specs: Seq[Specification]): this.type = {
     super.report(specs)
-    val specToRun = if (specs.size == 1)
-                      specs(0)
+    val filteredSpecs = specs.flatMap(_.filteredSpecs)
+    val specToRun = if (filteredSpecs.size == 1)
+                      filteredSpecs(0)
                     else {
-                      object totalSpecification extends Specification { include(specs:_*) }
+                      object totalSpecification extends Specification { include(filteredSpecs.map(s => new LazyParameter(() => s)):_*) }
                       totalSpecification
                     }
     
     notifiers.foreach { _.runStarting(specToRun.firstLevelExamplesNb) } 
-    reportASpecification(specToRun)
+    reportASpecification(specToRun, specToRun.planOnly())
   }
-  def reportASpecification(spec: Specification): this.type = {
+  def reportASpecification(spec: Specification, planOnly: Boolean): this.type = {
     notifiers.foreach { _.systemStarting(spec.description) }
     for (subSpec <- spec.subSpecifications) {
-      reportASpecification(subSpec)
+      reportASpecification(subSpec, planOnly)
     }
-    for (system <- spec.systems)
-      reportSystem(system)
+    for (system <- spec.systems) {
+      if (system.isAnonymous)
+	    for (example <- system.examples) reportExample(example, planOnly)
+	  else
+		reportSystem(system, planOnly)
+	}
     notifiers.foreach { _.systemCompleted(spec.description) }
     this
   }
-  def reportSystem(system: Sus): this.type = {
+  def reportSystem(system: Sus, planOnly: Boolean): this.type = {
     notifiers.foreach { _.systemStarting(system.header) }
+    
+    if (!planOnly && !system.ownFailures.isEmpty)
+      notifiers.foreach { notifier =>
+        system.ownFailures.foreach { failure =>
+          notifier.systemFailed(system.description, failure) 
+        }
+      }
+    else if (!planOnly && !system.ownErrors.isEmpty)
+      notifiers.foreach { notifier =>
+        system.ownErrors.foreach { error =>
+          notifier.systemError(system.description, error) 
+        }
+      }
+    else if (!planOnly && !system.ownSkipped.isEmpty)
+      notifiers.foreach { notifier =>
+        system.ownSkipped.foreach { skipped =>
+          notifier.systemSkipped(skipped.getMessage)
+        }
+      }
     for (example <- system.examples)
-      reportExample(example)
+      reportExample(example, planOnly)
     notifiers.foreach { _.systemCompleted(system.header) }
     this
   }
-  def reportExample(example: Example): this.type = {
+  def reportExample(example: Examples, planOnly: Boolean): this.type = {
     notifiers.foreach { _.exampleStarting(example.description) }
-    example.examples.foreach(reportExample(_))
-    if (example.isOk)
+    
+    if (!planOnly && example.isOk)
       notifiers.foreach { _.exampleSucceeded(example.description) }
-    else if (!example.failures.isEmpty)
+    else if (!planOnly && !example.failures.isEmpty)
       notifiers.foreach { notifier =>
         example.failures.foreach { failure =>
           notifier.exampleFailed(example.description, failure) 
         }
       }
-    else if (!example.errors.isEmpty)
+    else if (!planOnly && !example.errors.isEmpty)
       notifiers.foreach { notifier =>
         example.errors.foreach { error =>
           notifier.exampleError(example.description, error) 
         }
       }
-    else if (!example.skipped.isEmpty)
+    else if (!planOnly && !example.skipped.isEmpty)
       notifiers.foreach { notifier =>
         notifier.exampleSkipped(example.description) 
       }
+    if (!planOnly)
+      example.examples.foreach(e => reportExample(e, planOnly))
+
+    notifiers.foreach { _.exampleCompleted(example.description) }
     this
   }
 }

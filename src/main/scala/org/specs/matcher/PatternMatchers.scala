@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.matcher
 import org.specs.matcher.MatcherUtils._
@@ -99,6 +99,21 @@ trait PatternBaseMatchers {
        },
        d(value) + " is Some(x)",
        d(value) + " is not Some(x)")
+    }
+  }
+
+  /**
+   * Matches if the value <code>v</code> is Some(x)
+   */
+  def beSome[T](expected: T) = new CaseMatcher[T]() {
+    def someApply(v: => Option[T]) = {
+      val value = v
+      (value match {
+         case Some(`expected`) => true
+         case _ => false
+       },
+       d(value) + " is " + q("Some("+expected+")"),
+       d(value) + " is not " + q("Some("+expected+")"))
     }
   }
 

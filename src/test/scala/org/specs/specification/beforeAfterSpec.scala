@@ -72,62 +72,70 @@ class beforeAfterSpec extends SpecificationWithJUnit {
       badSpec.isOk must beTrue
     }
   }
-  "A system under test" can {
-    "specify a doBeforeAll method to setup the context before any example is executed" in {
-      specWithDoBeforeAll.execute
-      specWithDoBeforeAll.messages.filter(_.startsWith("msg")) must containMatch("doBeforeAll")
-      specWithDoBeforeAll.messages.filter(_.startsWith("msg")).drop(1) must (
+  "A system under specification" can {
+    "specify a doFirst method to setup the context before any example is executed" in {
+      specWithDoFirst.execute
+      specWithDoFirst.messages.filter(_.startsWith("msg")) must containMatch("doFirst")
+      specWithDoFirst.messages.filter(_.startsWith("msg")).drop(1) must (
         containMatch("example 1") and
         containMatch("example 2") and
-        notContainMatch("doBeforeAll"))
+        notContainMatch("doFirst"))
     }
-    "specify a doAfterAll method to setup the context after examples are executed" in {
-      specWithDoAfterAll.execute
-      specWithDoAfterAll.messages.filter(_.startsWith("msg")) must containMatch("doAfterAll")
-      specWithDoAfterAll.messages.filter(_.startsWith("msg")).drop(2) must (
+    "specify a doFirst executing only once " in {
+      specWithDoFirstAndNestedExamples.execute
+      specWithDoFirstAndNestedExamples.messages.filter(_.contains("msg doFirst")) must haveSize(1)
+    }
+    "specify a doLast method to setup the context after examples are executed" in {
+      specWithDoLast.execute
+      specWithDoLast.messages.filter(_.startsWith("msg")) must containMatch("doLast")
+      specWithDoLast.messages.filter(_.startsWith("msg")).drop(2) must (
         notContainMatch("example 1") and
         notContainMatch("example 2") and
-        containMatch("doAfterAll"))
+        containMatch("doLast"))
     }
     "specify a before/after clauses before and after: specification, systems, examples" in {
       specWithAll.execute
       specWithAll.messages.filter(_.startsWith("msg")).toList must_== List(
-      "msg doBeforeAllSpec",
-        "msg doBeforeAllSus1",
+      "msg doFirstSpec",
+        "msg doFirstSus1",
           "msg doBeforeSus1",
             "msg example 1.1",
           "msg doAfterSus1",
           "msg doBeforeSus1",
             "msg example 1.2",
           "msg doAfterSus1",
-        "msg doAfterAllSus1",
+        "msg doLastSus1",
 
-        "msg doBeforeAllSus2",
+        "msg doFirstSus2",
           "msg doBeforeSus2",
             "msg example 2.1",
           "msg doAfterSus2",
           "msg doBeforeSus2",
             "msg example 2.2",
           "msg doAfterSus2",
-        "msg doAfterAllSus2",
-      "msg doAfterAllSpec")
+        "msg doLastSus2",
+      "msg doLastSpec")
     }
   }
   "A specification" can {
-    "use a context to setup the before actions of a system under test" in {
+    "use a context to setup the before actions of a system under specification" in {
       specWithBeforeContext.execute
       specWithBeforeContext.beforeIsCalled must beTrue
     }
-    "use a context to setup the after actions of a system under test" in {
+    "use a context to execute actions around the expectations of examples" in {
+      specWithAroundContext.execute
+      specWithAroundContext.aroundIsCalled must beTrue
+    }
+    "use a context to setup the after actions of a system under specification" in {
       specWithAfterContext.execute
       specWithAfterContext.afterIsCalled must beTrue
     }
-    "use a context to setup the before and after actions of a system under test" in {
+    "use a context to setup the before and after actions of a system under specification" in {
       specWithContext.execute
       specWithContext.beforeIsCalled must beTrue
       specWithContext.afterIsCalled must beTrue
     }
-    "use a repeated context to setup the before and after actions of a system under test and repeat the same test several times" in {
+    "use a repeated context to setup the before and after actions of a system under specification and repeat the same test several times" in {
       specWithRepeatedContext.execute
       specWithRepeatedContext.data must_== 3
     }
@@ -136,11 +144,63 @@ class beforeAfterSpec extends SpecificationWithJUnit {
       specWithUntil.counter must_== 10
     }
   }
+  "A specification with an afterSpec method" should {
+    "execute the afterSpec method even if the spec execution is sequential - see issue 134" in {
+      var after = false
+      object s extends Specification with MockOutput {
+        "a system" should {
+          setSequential()
+          "with an example" in { 1.isExpectation }
+        }
+        (after = true).afterSpec
+      }
+      s.reportSpecs
+      after must beTrue
+    }
+  }
+  "A specification with nested examples" should {
+    "execute the before / after methods only around the leaves examples" in {
+      specWithBeforeAfterAndNestedExamples.execute
+      specWithBeforeAfterAndNestedExamples.messages.filter(_.startsWith("msg")).mkString("\n", "\n", "\n") must_== List(
+      "msg example 1",
+        "msg before",
+        "msg 1.1",
+        "msg after",
+        "msg before",
+        "msg 1.2",
+        "msg after",
+      "msg example 2",
+        "msg before",
+        "msg 2.1",
+        "msg after",
+        "msg before",
+        "msg 2.2",
+        "msg after").mkString("\n", "\n", "\n")
+    }
+    "execute the beforeSpec / afterSpec around the examples" in {
+      specWithDoBeforeSpecAfterSpecAndNestedExamples.execute
+      specWithDoBeforeSpecAfterSpecAndNestedExamples.messages.filter(_.startsWith("msg")).mkString("\n", "\n", "\n") must_== List(
+      "msg beforeSpec",
+        "msg example 1",
+          "msg 1.1",
+          "msg 1.2",
+        "msg example 2",
+          "msg 2.1",
+          "msg 2.2",
+      "msg afterSpec").mkString("\n", "\n", "\n")
+    }
+    "execute the afterSpec even if a composed example fails" in {
+      specWithAfterSpecFailingAComposingExample.execute
+      specWithAfterSpecFailingAComposingExample.messages.filter(_.startsWith("msg")).mkString("\n", "\n", "\n") must_== List(
+      "msg example 1",
+      "msg afterSpec").mkString("\n", "\n", "\n")
+    }
+  }
 }
 
-trait beforeAfterSpecification extends Specification with Console with MockOutput with Contexts {
+abstract class beforeAfterSpecification extends Specification with Contexts with Console with MockOutput { 
   shareVariables()
-  def execute = { systems = Nil; executeSpec }
+  def execute = { systemsList = Nil; executeSpec }
   def executeSpec
   override val specs = List(this)
   override def main(args: Array[String]) = super[Console].main(args)
@@ -197,6 +257,18 @@ object specWithBeforeContext extends beforeAfterSpecification {
     reportSpecs
   }
 }
+object specWithAroundContext extends beforeAfterSpecification {
+  var aroundIsCalled = false
+  val context1 = aroundExpectationsContext {
+    (a: Any) => { aroundIsCalled = true; a } 
+  }
+  override def executeSpec = {
+    "A specification" ->- context1 should {
+      "have example 1 ok" in { 1 must_== 1 }
+    }
+    reportSpecs
+  }
+}
 object specWithAfterContext extends beforeAfterSpecification {
   var afterIsCalled = false
   val context1 = afterContext(afterIsCalled = true)
@@ -238,20 +310,36 @@ object specWithUntil extends beforeAfterSpecification {
     reportSpecs
   }
 }
-object specWithDoBeforeAll extends beforeAfterSpecification {
+object specWithDoFirst extends beforeAfterSpecification {
   override def executeSpec = {
     "A specification" should {
-      doFirst { println("msg doBeforeAll") }
+      doFirst { println("msg doFirst") }
       "have example 1 ok" in { println("msg example 1") }
       "have example 2 ok" in { println("msg example 2") }
     }
     reportSpecs
   }
 }
-object specWithDoAfterAll extends beforeAfterSpecification {
+object specWithDoFirstAndNestedExamples extends beforeAfterSpecification {
   override def executeSpec = {
     "A specification" should {
-      doLast { println("msg doAfterAll") }
+      doFirst { println("msg doFirst") }
+      "have example 1 ok" in { 
+        "have example 1.1 ok" in { println("msg example 1.1") } 
+        "have example 1.2 ok" in { println("msg example 1.2") } 
+      }
+      "have example 2 ok" in { 
+        "have example 2.1 ok" in { println("msg example 2.1") } 
+        "have example 2.2 ok" in { println("msg example 2.2") } 
+      }
+    }
+    reportSpecs
+  }
+}
+object specWithDoLast extends beforeAfterSpecification {
+  override def executeSpec = {
+    "A specification" should {
+      doLast { println("msg doLast") }
       "have example 1 ok" in { println("msg example 1") }
       "have example 2 ok" in { println("msg example 2") }
     }
@@ -260,24 +348,75 @@ object specWithDoAfterAll extends beforeAfterSpecification {
 }
 object specWithAll extends beforeAfterSpecification {
   override def executeSpec = {
-    doBeforeSpec { println("msg doBeforeAllSpec") }
+    doBeforeSpec { println("msg doFirstSpec") }
     "A specification" should {
-      doFirst 	{ println("msg doBeforeAllSus1") }
+      doFirst 	{ println("msg doFirstSus1") }
       doBefore 		{ println("msg doBeforeSus1") }
-      doLast 	{ println("msg doAfterAllSus1") }
+      doLast 	{ println("msg doLastSus1") }
       doAfter 		{ println("msg doAfterSus1") }
       "have example 1.1 ok" in { println("msg example 1.1") }
       "have example 1.2 ok" in { println("msg example 1.2") }
     }
     "A specification" should {
-      println("msg doBeforeAllSus2").doFirst
+      println("msg doFirstSus2").doFirst
       println("msg doBeforeSus2").before
       "have example 2.1 ok" in { println("msg example 2.1") }
       "have example 2.2 ok" in { println("msg example 2.2") }
       println("msg doAfterSus2").after
-      println("msg doAfterAllSus2").doLast
+      println("msg doLastSus2").doLast
     }
-    println("msg doAfterAllSpec").afterSpec
+    println("msg doLastSpec").afterSpec
+    reportSpecs
+  }
+}
+object specWithBeforeAfterAndNestedExamples extends beforeAfterSpecification {
+  override def executeSpec = {
+    "A specification" should {
+      doBefore { println("msg before") }
+      doAfter  { println("msg after") }
+      "example 1" in { 
+        println("msg example 1")
+        "1.1" in { println("msg 1.1") }
+        "1.2" in { println("msg 1.2") }
+      }
+      "example 2" in { 
+        println("msg example 2")
+        "2.1" in { println("msg 2.1") }
+        "2.2" in { println("msg 2.2") }
+      }
+    }
+    reportSpecs
+  }
+}
+object specWithDoBeforeSpecAfterSpecAndNestedExamples extends beforeAfterSpecification {
+  override def executeSpec = {
+    doBeforeSpec { println("msg beforeSpec") }
+    doAfterSpec { println("msg afterSpec") }
+    "A specification" should {
+      "example 1 ok" in { 
+        println("msg example 1")
+        "have example 1.1 ok" in { println("msg 1.1") } 
+        "have example 1.2 ok" in { println("msg 1.2") } 
+      }
+      "msg example 2 ok" in { 
+        println("msg example 2")
+        "have example 2.1 ok" in { println("msg 2.1") } 
+        "have example 2.2 ok" in { println("msg 2.2") } 
+      }
+    }
+    reportSpecs
+  }
+}
+object specWithAfterSpecFailingAComposingExample extends beforeAfterSpecification {
+  override def executeSpec = {
+    doAfterSpec { println("msg afterSpec") }
+    "A specification" should {
+      "example 1 ok" in { 
+        println("msg example 1")
+        1 must_== 2
+        "have example 1.1 ok" in { println("msg 1.1") } 
+      }
+    }
     reportSpecs
   }
 }

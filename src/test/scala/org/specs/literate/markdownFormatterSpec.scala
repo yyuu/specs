@@ -14,13 +14,13 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.literate
 import org.specs.specification.Example
 import scala.xml._
 
-class markdownFormatterSpec extends spex.Specification {
+class markdownFormatterSpec extends org.spex.Specification {
   def formatString(s: String): String = new MarkdownFormatter{}.format(s)
   def formatElem(e: Elem): Node = new MarkdownFormatter{}.format(e)
 

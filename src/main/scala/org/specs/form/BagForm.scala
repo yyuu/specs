@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.form
 import scala.collection.mutable.ListBuffer
@@ -51,15 +51,15 @@ trait BagFormEnabled[T] extends TableFormEnabled {
 
   override def tr[F <: Form](l: F): F = {
     l match {
-      case entityLine: EntityLineForm[T] => {
-        expectedEntities.append(entityLine)
-        properties.append(entityLine)
+      case entityLine: EntityLineForm[_] => {
+        expectedEntities.append(entityLine.asInstanceOf[EntityLineForm[T]])
+        properties.append(entityLine.asInstanceOf[EntityLineForm[T]])
       }
       case _ => super[TableFormEnabled].tr(l)
     }
     l
   }
-  def setHeader[F <: LineForm](line: F): F = {
+  override def setHeader[F <: LineForm](line: F): F = {
     if (rowsNb == 0) inNewRow(line.header)
     line
   }

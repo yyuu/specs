@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.form
 import scala.collection.mutable._
@@ -50,7 +50,8 @@ class LineForm extends Form {
     p
   }
   /** add a new LineProp to that line with expected and actual value */
-  def prop[T](label: String, expected: Option[T], actual: =>Option[T]) = {
+  def prop[T](label: String, expected: Option[T], actual: =>Option[T]): LineProp[T
+  ] = {
     val p = new LineProp(label, new Property(() => expected), new Property(() => actual), Some(new MatcherConstraint(actual, executor)))
     lineProperties.append(p)
     add(p)
@@ -66,7 +67,22 @@ class LineForm extends Form {
     super.rows
   }
   /** extract a header from all the property labels */
-  def header = reduce(lineProperties.map(_.label), { (cur: String) => <th>{cur}</th> })
+  def header = {
+    val bareHeader = reduce(lineProperties.map(_.label), { (cur: String) => <th>{cur}</th> })
+    headerAttributes match {
+      case None => bareHeader
+      case Some(att) => bareHeader.toList.map {
+        case e: Elem => e % att
+        case other => other
+      } 
+    }  
+  }
+  /** add attributes to the xhtml header */
+  private var headerAttributes: Option[MetaData] = None
+  def %(attributes: MetaData): this.type = {
+    headerAttributes = Some(attributes)
+    this
+  }
   /** return the xhtml of all properties without the label (because they are LineProp and LineField) */
   override def toXhtml = reduce(lineProperties, { (p: LabeledXhtml) => p.toXhtml })
   /** return the xhtml of all properties without the label (because they are LineProp and LineField) */
@@ -79,7 +95,11 @@ class LineForm extends Form {
     }
     copyPropertiesAndFields(f)
   }
-
+  override def resetAll(): this.type = {
+    super.resetAll()
+    lineProperties.clear()
+    this
+  }
 }
 object LineForm {
   /** create a LineForm with labels only to create header rows */

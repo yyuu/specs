@@ -14,11 +14,13 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.specification
+import org.specs.util.Property
+import org.specs._
 
-class baseSpecificationSpec extends spex.Specification {
+class baseSpecificationSpec extends org.spex.Specification {
   def threeSpecs = List(new Specification{}, new Specification{}, new Specification{})
   
   "Specifications" can {
@@ -43,6 +45,31 @@ class baseSpecificationSpec extends spex.Specification {
       s1.include(s2)
       s2.include(s3)
       s3.parentSpecifications must_== List(s2, s1)
+    }
+    "share examples between sus using 'behave like'" in {
+      object s extends Specification {
+        var expectedContext = ""
+        var currentContext = ""
+        val c1 = beforeContext { currentContext = "c1" }
+        val c2 = beforeContext { currentContext = "c2" }
+        
+        "the first sus"->-(c1) should { 
+          "have one example using the context" in { 
+            currentContext must be_==(expectedContext).when(expectedContext == 2) 
+          } 
+        }
+        "the second sus"->-(c2) should {
+          expectedContext = "c2"
+          behave like "the first sus"
+          "have one example using the context" in { currentContext must_== expectedContext } 
+        }
+        "the third sus"->-(c2) should {
+          expectedContext = "c3"
+          behave like "the first sus"
+        }
+      }
+      s.systems(1).failures must be empty;
+      s.systems(2).failures aka "a system with improper expectations" must be empty
     }
   }
 }

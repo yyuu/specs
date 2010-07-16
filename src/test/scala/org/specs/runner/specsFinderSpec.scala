@@ -14,16 +14,17 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.runner
-import org.specs.io.mock.MockFileSystem
+import org.specs.io.mock.{ MockOutput, MockFileSystem }
 import org.specs.io.ConsoleOutput
 import org.specs.runner._
+import org.specs._
 
 class specsFinderSpec extends SpecificationWithJUnit with Init {
-
-  "A specs finder" should {
+  val finder = new MockFileSystem with SpecificationsFinder with MockOutput
+  "A specs finder" should { doBefore(finder.reset)
     finder.defaultExtension = ".scala"
     "not find the name of a specification in the file is not a .scala file" in {
       finder.addFile("fileName", packageDeclaration + specificationContent)
@@ -51,6 +52,14 @@ class specsFinderSpec extends SpecificationWithJUnit with Init {
       finder.addFile(specificationContent)
       finder.specificationNames("path", ".*") mustContain "trueSpec$"
     }
+    "create the name of a specification if it extends another specification class" in {
+      finder.addFile(packageDeclaration + "\nobject mySpec extends Parent")
+      finder.specificationNames("path", ".*") mustContain "org.specs.mySpec$"
+    }
+    "create the name of a specification if it is a class" in {
+      finder.addFile(packageDeclaration + "\nclass mySpec extends Parent")
+      finder.specificationNames("path", ".*") mustContain "org.specs.mySpec"
+    }
     "return an empty list if there is no specification declaration found in the file" in {
       finder.addFile(packageDeclaration)
       finder.specificationNames("path", ".*") must_== List()
@@ -64,9 +73,17 @@ class specsFinderSpec extends SpecificationWithJUnit with Init {
       finder.addFile("file2.scala", packageDeclaration + specificationContent)
       finder.specificationNames("dir1", ".*") must_== List("org.specs.trueSpec$", "org.specs.trueSpec$")
     }
+    "not fail when trying to create a spec for an object not inheriting the specification class" in {
+      finder.createSpecification("org.specs.runner.NotASpecification") must beNone
+    }
+    "print an error message when failing load a spec class when the -DdebugLoadClass option is true" in {
+      System.setProperty("debugLoadClass", "true")
+	  finder.createSpecification("org.specs.runner.NotASpecification", true, false)
+      finder.messages must containMatch("is not an instance of")
+    }
   }
-  object finder extends MockFileSystem with SpecificationsFinder with ConsoleOutput
 }
+class NotASpecification
 trait Init {
   val packageDeclaration = "package org.specs"
   val packageDeclarationWithSc = packageDeclaration + ";"

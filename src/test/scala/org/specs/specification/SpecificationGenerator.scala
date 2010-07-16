@@ -14,14 +14,15 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.specification
-import org.scalacheck.Gen.{ choose, sized, vectorOf }
+import org.scalacheck.Gen.{ choose, sized, listOfN, listOf }
 import org.scalacheck._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Prop._
 import org.specs.matcher._
+import org.specs._
 
 trait SpecificationGenerator { self: Specification =>
   object spec extends Specification("generated spec")
@@ -44,16 +45,16 @@ trait SpecificationGenerator { self: Specification =>
   def genSizedSus(size: Int, s: Specification): Gen[Sus] = {
     val sus = new Sus("sus with " + size + " max examples", s)
     for { n <- choose(0, size)
-          e <- vectorOf(n, genExample(sus))
+          e <- listOf(n, genExample(sus))
     } yield sus
   }
   def genSus = sized(size => genSizedSus(size))
   def genSizedSpec(size: Int): Gen[Specification] = {
     val generatedSpec = new Specification("spec with " + size + " max sus") {}
     for { systemsNb <- choose(0, size)
-          systems <- vectorOf(systemsNb, genSizedSus(size, generatedSpec))
+          systems <- listOfN(systemsNb, genSizedSus(size, generatedSpec))
           subSpecsNb <- choose(0, 1)
-          subSpecs <- vectorOf(subSpecsNb, genSizedSpec(size))
+          subSpecs <- listOfN(subSpecsNb, genSizedSpec(size))
     } yield {
       subSpecs.foreach(generatedSpec.include(_))
       generatedSpec

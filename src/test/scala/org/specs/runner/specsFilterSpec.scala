@@ -14,11 +14,12 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.runner
 import org.specs.Specification
 import org.specs.runner._
+import org.specs._
 
 class specsFilterSpec extends SpecificationWithJUnit {
   "a specs filter" should {
@@ -27,9 +28,9 @@ class specsFilterSpec extends SpecificationWithJUnit {
         "this sus is sus1 and it" should { "have one example" in {} }
         "this sus is sus2 and it" should { "have one example" in {} }
       }
-      val systems = filter(List(spec), ".*sus2.*", ".*").first.systems
+      val systems = filter(List(spec), ".*sus2.*", ".*").head.systems
       systems.size must_== 1
-      systems.first.description must beMatching("sus2")
+      systems.head.description must beMatching("sus2")
     }
     "filter the examples of the specification according to a regular expression" in {
       object spec extends Specification {
@@ -39,15 +40,15 @@ class specsFilterSpec extends SpecificationWithJUnit {
         }
         "this sus is sus2 and it" should { "have one example ex1" in {} }
       }
-      val systems = filter(List(spec), ".*", ".*ex1").first.systems
+      val systems = filter(List(spec), ".*", ".*ex1").head.systems
       systems.size must_== 2
       val s1 = systems(0)
       s1.examples.size must_== 1
-      s1.examples.first.description must beMatching("ex1")
+      s1.examples.head.description must beMatching("ex1")
 
       val s2 = systems(1)
       s2.examples.size must_== 1
-      s2.examples.first.description must beMatching("ex1")
+      s2.examples.head.description must beMatching("ex1")
     }
     "check the patterns for sus and examples" in {
       val filter = new SpecsFilter {

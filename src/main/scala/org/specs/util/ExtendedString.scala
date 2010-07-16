@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.util
 
@@ -26,7 +26,7 @@ object ExtendedString {
   /** This class adds utility functions to Strings */
   case class ExtendedString(s: String) {
     /** @return the String s with its first character being uncapitalized: "HELLO".uncapitalize -> "hELLO" */
-    def uncapitalize = s.first.toLowerCase + s.drop(1)
+    def uncapitalize = s.head.toLower + s.drop(1)
 
     /** 
      * @param remove String to suppress from the original string
@@ -76,7 +76,19 @@ object ExtendedString {
         case Nil => Nil
       }
       if (s.isEmpty) ""
-      else List.toString(s.charAt(0) :: uncamelChars(s.substring(1).toList))
+      else (s.charAt(0) :: uncamelChars(s.substring(1).toList)).mkString("")
+    }
+    
+    /**
+     * @return a list of Strings splitted so that they have a maximum size
+     */
+    def splitToSize(n: Int): List[String] = splitToSize(s, n, Nil)
+    private def splitToSize(string: String, n: Int, result: List[String]): List[String] = {
+      if (string.size <= n)
+        (string :: result).reverse
+      else
+        // new Strings are necessary to avoid memory errors because substring is just a view on the underlying string
+        splitToSize(new String(string.drop(n)), n, new String(string.take(n)) :: result)
     }
   }
 }

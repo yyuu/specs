@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.form
 import org.specs.util.Property
@@ -145,6 +145,8 @@ trait DecoratedXhtml {
   def copy(c: DecoratedXhtml) = {
     def copyList[T](l: List[T]) = l.foldLeft(Nil:List[T]) { (res, cur) => cur :: res }.reverse
     c.labelsDecorators = copyList(labelsDecorators)
+    c.labelsCellsDecorators = copyList(labelsCellsDecorators)
     c.valuesDecorators = copyList(valuesDecorators)
+    c.valuesCellsDecorators = copyList(valuesCellsDecorators)
   }
 }

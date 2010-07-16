@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.util
 import org.specs._
@@ -102,6 +102,15 @@ class extendedStringSpec extends SpecificationWithJUnit with DataTables {
     }
     "return the found groups when there are several" in {
       "hello".findAll("l") must_== List("l", "l")
+    }
+  }
+  "the splitToSize function" should {
+    "not split a string if its size is less than or equal the split size" in {
+      "hello".splitToSize(5) must_== List("hello")
+    }
+    "split a string if its size is greater than the split size" in {
+      "hello".splitToSize(3) must_== List("hel", "lo")
+      "hello world".splitToSize(3) must_== List("hel", "lo ", "wor", "ld")
     }
   }
 }

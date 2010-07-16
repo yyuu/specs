@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.specification
 
@@ -24,9 +24,17 @@ object specificationSpecifications extends Specification {
     "The Specification specifications" areSpecifiedBy (
         new baseSpecificationSpec,
         new beforeAfterSpec,
-		new calculatorSpec,
+        new beforeAfterDontShareSpec,
+        new calculatorSpec,
         new exampleSpec,
+        new executionPathSpec,
+        new executionSpec,
+        new pendingUntilFixedSpec,
+        new sharedSpec,
+        new snippetSpec,
         new specificationSpec,
+        new specificationSystemsSpec,
+        new specificationContextSpec,
         new specificationExecutorSpec,
         new sugarSpec,
 		new taggedSpec,
@@ -35,5 +43,6 @@ object specificationSpecifications extends Specification {
 }
 object specificationUnits extends Specification {
     "The specification unit tests" areSpecifiedBy (
+        new beforeAfterUnit,
         new specificationsUnit)
 }

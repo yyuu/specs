@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.specification
 import scala.collection.mutable.Queue
@@ -37,23 +37,22 @@ import scala.collection.mutable.Queue
  */
 trait Tagged {
   /** list of all tags */
-  val tags: Queue[Tag] = new Queue[Tag]
-
+  private[specification] val tagList: Queue[Tag] = new Queue[Tag]
   /** list of tags which are accepted for this element */
-  val accepted: Queue[Tag] = new Queue[Tag]
-
+  private[specification] val accepted: Queue[Tag] = new Queue[Tag]
   /** list of tags which are rejected for this element */
-  val rejected: Queue[Tag] = new Queue[Tag]
+  private[specification] val rejected: Queue[Tag] = new Queue[Tag]
 
   /** transforms a string to a Tag object */
   implicit def stringToTag(s: String) = Tag(s) 
 
+  /** @return the list of tags */
+  def tagNames = tagList.toList map (_.name)
   /** Add one or several tags to this element */
   def tag(t: String*): this.type = addTags(t:_*)
-
   /** Clear all tags, accepted and rejected */
   def clearTags: this.type = { 
-    tags.clear
+    tagList.clear
     accepted.clear
     rejected.clear
     taggedComponents.foreach(_.clearTags)
@@ -62,7 +61,7 @@ trait Tagged {
 
   /** Add one tag to this element */
   def addTag(t: String): this.type = { 
-    tags.enqueue(Tag(t))
+    tagList.enqueue(Tag(t))
     propagateTagsToComponents
     this 
   }
@@ -114,20 +113,20 @@ trait Tagged {
    * @return true if the element can be accepted, considering the tags it owns and the accepted/rejected tags
    */
   def isAccepted = {
-    tags.isEmpty && accepted.isEmpty ||
+    tagList.isEmpty && accepted.isEmpty ||
     (accepted.isEmpty ||
-    !accepted.isEmpty && tags.exists(t => accepted.exists(a => t matches a))) && 
-    !tags.exists(t => rejected.exists(a => t.matches(a)))
+    !accepted.isEmpty && tagList.exists(t => accepted.exists(a => t matches a))) && 
+    !tagList.exists(t => rejected.exists(a => t.matches(a)))
   }
 
   /** @return a description of the Tagged element showing the owned tags, the accepted and rejected tags */
-  def tagSpec = "tags: " + tags.mkString(", ") + "  accepted: " + accepted.mkString(", ") + "  rejected: " + rejected.mkString(", ")
+  def tagSpec = "tags: " + tagList.mkString(", ") + "  accepted: " + accepted.mkString(", ") + "  rejected: " + rejected.mkString(", ")
 
   /** add the tags specification from another tagged element. This is used when propagating the tags from a specification to a sus for example */
   def tagWith(other: Tagged): this.type = {
-    this.addTags(other.tags.map(_.name):_*).
-      accept(other.accepted.map(_.name):_*).
-      reject(other.rejected.map(_.name):_*)
+    addTags(other.tagList.map(_.name):_*)
+    acceptTags(other.accepted.map(_.name):_*)
+    rejectTags(other.rejected.map(_.name):_*)
   }
   /** this method should be overriden if the Tagged element has Tagged components which should be tagged when this element is tagged */
   def taggedComponents: Seq[Tagged] = List()

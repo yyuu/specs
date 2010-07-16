@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.runner
 
@@ -52,7 +52,7 @@ class htmlRunnerRules(name: String) extends HtmlSpecificationWithJUnit(name) wit
   def literateDesc = run must \\("h1")
   def subExamples = run must (beMatching("subex1")^^((_: Iterable[Node]).toString)
                               and \\(<h4>this example has sub-examples</h4>))
-  def systemsList = run must (\\(<div id="leftColumn"/>) and \\(<td>{specification.name}</td>))
+  def susList = run must (\\(<div id="leftColumn"/>) and \\(<td>{specification.name}</td>))
   def noSystemsListForOneOnly = runSmall.toString must include("<script language=\"javascript\">window.onload=init;</script>")
   def collapsibleColumn = run must \\(<img src="images/expanded.gif" onclick="toggleNavBar(this)"/>)
   def greenHighlight = 1 must_== 1
@@ -75,7 +75,7 @@ class htmlRunnerRules(name: String) extends HtmlSpecificationWithJUnit(name) wit
   val runString = executeRunner.results.toString aka "the generated html"
   val runSmall = executeSmallRunner.results
 
-  val htmlFile = executeRunner.files.keySet.filter(_.toString.endsWith(".html")).first aka "the report file"
+  val htmlFile = executeRunner.files.keySet.filter(_.toString.endsWith(".html")).head aka "the report file"
   val createdDirs = executeRunner.createdDirs aka "the list of created directories"
 
   object smallRunner extends InstrumentedRunner(subSpecification)

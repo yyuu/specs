@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.matcher
 import org.specs._
@@ -23,7 +23,7 @@ import org.scalacheck._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen
 import org.scalacheck.Gen._
-import org.scalacheck.Prop.forAll
+import org.scalacheck.Prop._
 import org.specs.mock._
 import org.specs.io._
 
@@ -34,6 +34,9 @@ class scalacheckMatchersSpec extends MatchersSpecification with ScalaCheckExampl
     }
     "be ok with a true property" in {
       alwaysTrueProp must pass
+    }
+    "be ok with a true function" in {
+      { a: Boolean => true }.forAll must pass
     }
     "be ko with a false property" in {
       expectation(identityProp must pass) must failWithMatch("A counter-example is 'false' \\(after \\d+ tr(y|ies)\\)")
@@ -56,6 +59,23 @@ class scalacheckMatchersSpec extends MatchersSpecification with ScalaCheckExampl
     "accept properties based on scalacheck commands" in  {
       expectation(CounterSpecification must pass) must failWithMatch("A counter-example is .*")
     }
+  }
+  val constantPair: Gen[(Double, Double)] = Gen.value((0.0, 0.0))
+  "a validate matcher" should {
+    "accept a partial function with an untyped partial function returning a SuccessValue" in {
+      constantPair must validate { case (x, y) => 1 must_== 1 }
+    }
+    "accept a partial function with an untyped partial function returning a boolean" in {
+      constantPair must validate { case (x, y) => true }
+    }
+    "be ko if the partial function is false for some value" in {
+      expectation(constantPair must validate { case (x, y) => x > 1 }) must failWithMatch("A counter-example is .*")
+    }
+  }
+  "a validate matcher" can {
+    "be used with a 'validates' shorthand: gen validates partialFunction" in {
+	  constantPair validates { case (x, y) => true }
+	}
   }
   "A ScalaCheck property" should {
     "not add new expectations during evaluation if isExpectation is off" in {
@@ -92,17 +112,19 @@ object specWithFailure extends Specification with ScalaCheck {
   forAll((a:Int) => {counter +=1; counter < 10}) must pass
 }
 
-trait ScalaCheckExamples extends Specification with ScalaCheck {
+trait ScalaCheckExamples extends ScalaCheck {  this: Specification =>
   val identityProp = forAll((a:Boolean) => a)
-  val alwaysTrueProp = forAll((a:Int) => true)
-  val alwaysTrue = elements(true)
-  val alwaysFalse = elements(false)
-  val random = elements(true, false)
-  val exceptionValues = Gen(p => throw new Exception("e"))
+  val alwaysTrueProp = proved
+  val alwaysTrueFunction: Boolean => Boolean = { a: Boolean => true }
+  val alwaysTrue = Gen.value(true)
+  val alwaysFalse = Gen.value(false)
+  val random = Gen.oneOf(true, false)
+  val exceptionValues = Gen(p => throw new java.lang.Exception("e"))
   val trueFunction = ((x: Boolean) => true)
+  val partialFunction: PartialFunction[Boolean, Boolean] = { case (x: Boolean) => true }
   val falseFunction = ((x: Boolean) => false)
   val identityAssert: Boolean => Boolean = ((x: Boolean) => x mustBe true)
-  val exceptionProperty = ((x: Boolean) => throw new Exception("e"))
+  val exceptionProperty = ((x: Boolean) => {throw new java.lang.Exception("e"); proved})
 }
 object CounterSpecification extends Commands {
 
@@ -119,19 +141,18 @@ object CounterSpecification extends Commands {
     def run(s: State) = counter.inc
     def nextState(s: State) = State(s.n + 1)
 
-    preCondition = s => true
+    preConditions += (s => true)
 
-    postCondition = (s,r) => counter.get == s.n + 1
+    postConditions += ((s,r,u) => counter.get == s.n + 1)
   }
 
   case object Dec extends Command {
     def run(s: State) = counter.dec
     def nextState(s: State) = State(s.n - 1)
-    postCondition = (s,r) => counter.get == s.n - 1
+    postConditions += ((s,r,u) => counter.get == s.n - 1)
   }
 
-
-  def genCommand(s: State): Gen[Command] = Gen.elements(Inc, Dec)
+  def genCommand(s: State): Gen[Command] = Gen.oneOf(Inc, Dec)
 
 }
 class Counter(private var n: Int) {

@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.matcher
 import org.specs.Sugar._
@@ -80,6 +80,9 @@ class xmlMatchersUnit extends MatchersSpecification with XmlMatchers {
     "match a node contained in another given its label and its attributes and values" in {
       <a><b name="value"></b></a> must \("b", Map("name"->"value"))
     }
+    "match a node contained in another given its label and its attributes and some values" in {
+      <a><b name="value" name2="value2" name3="value3"></b></a> must \("b", "name"->"value", "name2"->"value2")
+    }
     "not match a node contained in another given its label and a wrong attribute or value" in {
       expectation(<a><b name="value"></b></a> must \("b", Map("name1"->"value"))) must failWith("<a><b name=\"value\"></b></a> doesn't contain subnode b with attributes: name1=\"value\"")
       expectation(<a><b name="value"></b></a> must \("b", Map("name"->"value1"))) must failWith("<a><b name=\"value\"></b></a> doesn't contain subnode b with attributes: name=\"value1\"")
@@ -88,8 +91,8 @@ class xmlMatchersUnit extends MatchersSpecification with XmlMatchers {
     "not match a node contained in another given its label and a inexisting attributes" in {
       expectation(<a><b name="value"></b></a> must \("b", Map("name"->"value", "name2"->"value2"))) must failWith("<a><b name=\"value\"></b></a> doesn't contain subnode b with attributes: name=\"value\" name2=\"value2\"")
     }
-    "not match a node contained in another given its label and a missing attributes" in {
-      expectation(<a><b name="value" name2="value"></b></a> must \("b", Map("name"->"value"))) must failWith("<a><b name2=\"value\" name=\"value\"></b></a> doesn't contain subnode b with attributes: name=\"value\"")
+    "not match a node contained in another given its label and a missing attributes when matching exactly" in {
+      expectation(<a><b name="value" name2="value"></b></a> must \("b", "name"->"value").exactly) must failWith("<a><b name2=\"value\" name=\"value\"></b></a> doesn't contain subnode b with attributes: name=\"value\"")
     }
     "match a node <b><c></c></b> contained in the node a" in {
       <a><b><c></c></b></a> must \(<b><c></c></b>)
@@ -98,7 +101,7 @@ class xmlMatchersUnit extends MatchersSpecification with XmlMatchers {
       expectation(<a><b><c></c></b></a> must \(<b><d></d></b>)) must failWith("<a><b><c></c></b></a> doesn't contain <b><d></d></b>")
     }
     "not evaluate the expressions twice" in {
-      val nodes: Iterable[scala.xml.Node] = <c/>
+      val nodes: Seq[scala.xml.Node] = <c/>
       \("c") must evalOnce(exp(nodes))
     }
   }
@@ -152,7 +155,7 @@ class xmlMatchersUnit extends MatchersSpecification with XmlMatchers {
       expectation(expected must \\(<b>world</b>)) must failWith("<a><b>hello</b></a> doesn't contain <b>world</b>")
     }
     "not evaluate the expressions twice" in {
-      val nodes: Iterable[scala.xml.Node] = <c/>
+      val nodes: Seq[scala.xml.Node] = <c/>
       \\("c") must evalOnce(exp(nodes))
     }
   }

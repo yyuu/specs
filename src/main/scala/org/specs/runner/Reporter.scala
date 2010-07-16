@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.runner
 
@@ -24,6 +24,7 @@ import org.specs.specification._
 import org.specs.util.Configuration._
 import org.specs.util.Configuration
 import org.specs.util.Property
+import org.specs._
 
 /**
  * The SpecsHolder trait is used by any class providing access to a sequence of specifications
@@ -57,17 +58,19 @@ trait SpecsHolder {
  * object runner extends Runner(spec) with Html with Xml for example
  */
 trait Reporter extends SpecsFilter with ConsoleLog {
-  val specsConfiguration: Property[Configuration] = Property(config)
+  private val userConfiguration: Property[Configuration] = Property(config)
   /** this variable controls if stacktraces should be printed. */
-  protected val stacktrace = Property(specsConfiguration().stacktrace)
+  private[specs] val stacktrace = Property(userConfiguration().stacktrace)
   /** this variable controls if ok examples should be printed. */
-  protected val failedAndErrorsOnly = Property(specsConfiguration().failedAndErrorsOnly)
+  private[specs] val failedAndErrorsOnly = Property(userConfiguration().failedAndErrorsOnly)
   /** this variable controls if the statistics should be printed. */
-  protected val statistics = Property(specsConfiguration().statistics)
+  private[specs] val statistics = Property(userConfiguration().statistics)
   /** this variable controls if the final statistics should be printed. */
-  protected val finalStatisticsOnly = Property(specsConfiguration().finalStatisticsOnly)
+  private[specs] val finalStatisticsOnly = Property(userConfiguration().finalStatisticsOnly)
   /** this variable controls if the ANSI color sequences should be used to colorize output */
-  protected val colorize = Property(specsConfiguration().colorize)
+  private[specs] val colorize = Property(userConfiguration().colorize)
+  /** this variable controls if the examples must not be executed and only high-level descriptions must be displayed */
+  private[specs] val planOnly = Property(false)
 
   /** set a new configuration object. */
   def setConfiguration(className: Option[String]): this.type = { 
@@ -85,26 +88,42 @@ trait Reporter extends SpecsFilter with ConsoleLog {
   def setFinalStatisticsOnly(): this.type = { finalStatisticsOnly(true); this }
   /** allow subclasses to add colorization to the output. */
   def setColorize(): this.type = { colorize(true); this }
+  /** allow subclasses to display high-level descriptions only. */
+  def setPlanOnly(): this.type = { planOnly(true); this }
   /** reset all options. */
   def resetOptions(): this.type = {
     args = Array()
     setOptionsFromConfig()
   }
   def setOptionsFromConfig(): this.type = {
-    specsConfiguration(config)
-    stacktrace(specsConfiguration().stacktrace)
-    failedAndErrorsOnly(specsConfiguration().failedAndErrorsOnly)
-    colorize(specsConfiguration().colorize)
-    statistics(specsConfiguration().statistics)
-    finalStatisticsOnly(specsConfiguration().finalStatisticsOnly)
+    userConfiguration(config)
+    stacktrace(userConfiguration().stacktrace)
+    failedAndErrorsOnly(userConfiguration().failedAndErrorsOnly)
+    colorize(userConfiguration().colorize)
+    statistics(userConfiguration().statistics)
+    finalStatisticsOnly(userConfiguration().finalStatisticsOnly)
     this
   }
 
+  def runConfiguration = {
+    val outer = this
+    new Configuration {
+      override def stacktrace = outer.stacktrace()
+      override def failedAndErrorsOnly = outer.failedAndErrorsOnly()
+      override def statistics = outer.statistics()
+      override def finalStatisticsOnly = outer.finalStatisticsOnly()
+      override def colorize = outer.colorize()
+    }
+  }
   /**
    * optional arguments to be used in the main method and which can be set from the code directly.
    */
-  var args: Array[String] = Array()
-
+  private var specArgs: Array[String] = Array()
+  def args = specArgs
+  def args_=(a: Array[String]) = {
+    specArgs = a
+    overrideConfigurationWithUserArgs()
+  }
   /**
    * Main method for the Reporter trait.
    *
@@ -119,9 +138,11 @@ trait Reporter extends SpecsFilter with ConsoleLog {
       displayHelp    
     } else {
       reportSpecs
-      if (filteredSpecs.exists(_.isFailing)) System.exit(1) else System.exit(0)
+      if (filteredSpecs.exists(_.isFailing)) exit(1) else exit(0)
     }
   }
+  /** override this method for a different handling of exiting. */
+  private[specs] def exit(code: Int) = System.exit(code)
   /** display all help options. */
   protected def displayHelp = {
     displayUsage
@@ -144,6 +165,7 @@ trait Reporter extends SpecsFilter with ConsoleLog {
     [[-acc | --accept] tag1,tag2,...] [[-rej | --reject] tag1,tag2,...]
     [-sus | --system]
     [-ex | --example]
+    [-plan | --planOnly]
     [-c | --color]""".stripMargin)
   }
   /** display the options description. */
@@ -159,6 +181,7 @@ trait Reporter extends SpecsFilter with ConsoleLog {
 -rej, --reject tags             reject the specified tags (comma-separated names)
 -sus, --system                  only the systems under specifications matching this regular expression will be executed
 -ex, --example                  only the examples matching this regular expression will be executed
+-plan, --planOnly               only display the sus and first level descriptions without executing the examples
 -c, --color                     report with color""".stripMargin)
   }
   /** regexp for filtering systems. */
@@ -183,15 +206,22 @@ trait Reporter extends SpecsFilter with ConsoleLog {
    * to allow the chaining of several reporters as traits.
    */
   def report(specs: Seq[Specification]): this.type = {
+    overrideConfigurationWithUserArgs()
+    setTags(specs)
+    debug("Reporter - reporting " + specs.map(_.description).mkString(", "))
+    this
+  }
+  /**
+   * set the specification configuration from the user arguments
+   */
+  private def overrideConfigurationWithUserArgs() = {
     if (argsContain("-config", "--configuration")) setConfiguration(argValue(args, List("-config", "--configuration")))
     if (argsContain("-ns", "--nostacktrace")) setNoStacktrace()
     if (argsContain("-nostats", "--nostatistics")) setNoStatistics()
     if (argsContain("-finalstats", "-finalstatistics")) setFinalStatisticsOnly()
     if (argsContain("-xonly", "--failedonly")) setFailedAndErrorsOnly()
+    if (argsContain("-plan")) setPlanOnly()
     if (argsContain("-c", "--color")) setColorize()
-    setTags(specs, args)
-    debug("Reporter - reporting " + specs.map(_.description).mkString(", "))
-    this
   }
   /** @return true if the args contain one of the options, regardless of the case. */
   private def argsContain(options: String*) = args.map(_.toLowerCase).exists(options.contains(_))
@@ -200,15 +230,15 @@ trait Reporter extends SpecsFilter with ConsoleLog {
    * @param specifications list of specifications
    * @param arguments user-defined arguments containing either -acc, --accept, -rej, --reject
    */
-  private def setTags(specifications: Seq[Specification], arguments: Array[String]) = {
-    def printWarning = warning("accept/reject tags omitted in: " + arguments.mkString(", "))
-    def acceptSpecTags(s: Specification, i: Int) = s.acceptTag(arguments(i + 1).split(","):_*)
-    def rejectSpecTags(s: Specification, i: Int) = s.rejectTag(arguments(i + 1).split(","):_*)
+  private[specs] def setTags(specifications: Seq[Specification]) = {
+    def printWarning = warning("accept/reject tags omitted in: " + specArgs.mkString(", "))
+    def acceptSpecTags(s: Specification, i: Int) = s.acceptTag(specArgs(i + 1).split(","):_*)
+    def rejectSpecTags(s: Specification, i: Int) = s.rejectTag(specArgs(i + 1).split(","):_*)
     def setAcceptedTags(specifications: Seq[Specification], argumentNames: List[String], f: (Specification, Int) => Specification) = {
-      arguments.map(_.toLowerCase).findIndexOf(arg => argumentNames.contains(arg)) match {
+      specArgs.map(_.toLowerCase).indexWhere(arg => argumentNames.contains(arg)) match {
         case -1 => ()
-        case i if (i < arguments.length - 1) => filteredSpecs.foreach(f(_, i))
-        case _ => if (!arguments.isEmpty) printWarning
+        case i if (i < specArgs.length - 1) => filteredSpecs.foreach(f(_, i))
+        case _ => if (!specArgs.isEmpty) printWarning
       }
     }
     setAcceptedTags(specifications, List("-acc", "--accept"), acceptSpecTags(_, _))
@@ -220,7 +250,7 @@ trait Reporter extends SpecsFilter with ConsoleLog {
    * for example: argValue(Array("-ex", ".*ex.*"), List("-ex", "--example")) = Some(".*ex.*")
    */
   protected def argValue(arguments: Array[String], argumentNames: List[String]): Option[String] = {
-    arguments.map(_.toLowerCase).findIndexOf(arg => argumentNames.contains(arg)) match {
+    arguments.map(_.toLowerCase).indexWhere(arg => argumentNames.contains(arg)) match {
       case -1 => None
       case i if (i < arguments.length - 1) => Some(arguments(i + 1))
       case _ => {
@@ -232,3 +262,4 @@ trait Reporter extends SpecsFilter with ConsoleLog {
 
   def ::(r: Reporter) = List(r, this)
 }
+ 

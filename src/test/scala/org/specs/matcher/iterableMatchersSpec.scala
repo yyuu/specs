@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.matcher
 import org.specs._
@@ -45,9 +45,6 @@ class iterableMatchersSpec extends MatchersSpecification {
     "provide a 'must containAll' matcher on iterables: List(1, 2, 3) must containAll(List(1, 2))" in {
       List("one", "two", "three") must containAll(List("one", "two"))
       expectation(List("one", "two") must containAll(List("one", "three"))) must failWith("'List(one, two)' doesn't contain all of 'List(one, three)'")
-    }
-    "provide a 'must containAll' matcher on iterables accepting detailed differences" in {
-      expectation(List("one", "two") must containAll(List("one", "three"))(new fullDetails("[]"))) must failWith("'one\nt[wo]' doesn't contain all of 'one\nt[hree]'")
     }
     "provide a 'must containInOrder' matcher on iterables checking if one sequence is included inside another" in {
       List("one", "two", "three") must containInOrder(List("one", "two"))
@@ -125,8 +122,8 @@ class iterableMatchersSpec extends MatchersSpecification {
       (Nil:Iterable[Int]) must be empty
       val list: List[Int] = Nil
       list must be empty
-      val collection: Collection[Int] = Nil
-      collection must be empty
+      val iterable: Iterable[Int] = Nil
+      iterable must be empty
       val seq: Seq[Int] = Nil
       seq must be empty
       val map: Map[Int, Int] = Map()

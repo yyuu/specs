@@ -14,11 +14,11 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.form
 
-class lineFormSpec extends spex.Specification {
+class lineFormSpec extends org.spex.Specification {
   val lineForm = new LineForm {
         prop("First Name", "Hello")
         prop("Last Name", "World")
@@ -32,6 +32,9 @@ class lineFormSpec extends spex.Specification {
     }
     "return a header with the properties labels" in {
       lineForm.header.toString must include("First Name") and include("Last Name")
+    }
+    "return a modified header with specific attributes" in {
+      (lineForm % <t width="50%"/>.attributes).header.toString must include("width=\"50%\"")
     }
     "return a row containing the properties values instead when queried for rows" in {
       lineForm.rows must have size 1

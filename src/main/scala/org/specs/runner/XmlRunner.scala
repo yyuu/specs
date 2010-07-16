@@ -14,16 +14,16 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.runner
 import org.specs.io._
 import org.specs.util._
 import org.specs.log._
 import org.specs._
-import scala.xml.{Elem, PrettyPrinter}
+import scala.xml.{Elem, PrettyPrinter, NodeSeq}
 import org.specs.specification._
-import org.specs.ExtendedThrowable._
+import org.specs.util.ExtendedThrowable._
 import scala.xml.{Elem, PrettyPrinter}
 import org.specs.execute._
 
@@ -32,7 +32,7 @@ import org.specs.execute._
  * Usage: <code>object runner extends XmlRunner("./results/specs", mySpec)</code>
  *
  * The name of the generated file is specification.name by default but can be overriden:<pre>
- * object runner extends XmlRunner("./results/specs", mySpec){ override def fileName="spec-report.xml" }</pre>
+ * object runner extends XmlRunner(mySpec, "./results/specs"){ override def fileName(s: Specification)="spec-report.xml" }</pre>
  */
 case class XmlRunner(val specs: Seq[Specification], outputDirPath: String, fName: BaseSpecification => String) extends 
   FileReporter(outputDirPath, fName) with Xml {
@@ -44,10 +44,10 @@ case class XmlRunner(val specs: Seq[Specification], outputDirPath: String, fName
    * object runner extends Runner(spec1 :: spec2, HtmlRunner() :: XmlRunner())
    * </pre>
    */
-  def this() = this(Nil, "./", XmlNamingFunction.default)
+  def this() = this(Nil, "./target", XmlNamingFunction.default)
   
   /** alternate constructor with the specification only. The output dir is the current directory */
-  def this(specifications: Specification*) = this(specifications, ".", XmlNamingFunction.default)
+  def this(specifications: Specification*) = this(specifications, "./target", XmlNamingFunction.default)
 
   /** alternate constructor with one specification only. The output dir is the current directory */
   def this(spec: Specification, outputDirPath: String) = this(List(spec), outputDirPath, XmlNamingFunction.default)
@@ -74,7 +74,7 @@ case class XmlSuite(val specs: Seq[Specification], outputDirPath: String, fName:
    * object runner extends Runner(spec1 :: spec2, HtmlSuite() :: XmlSuite())
    * </pre>
    */
-  def this() = this(Nil, "./", XmlNamingFunction.default)
+  def this() = this(Nil, "./target", XmlNamingFunction.default)
   
   /** alternate constructor with the specification only. The output dir is the current directory */
   def this(specifications: Specification*) = this(specifications, ".", XmlNamingFunction.default)
@@ -110,7 +110,7 @@ trait Xml extends File {
   override def fileName(spec: BaseSpecification): String = XmlNamingFunction.default(spec) 
 
   /** definition of the output directory of the report. */
-  override def outputDir = "."
+  override def outputDir = "./target"
   
   /** definition of xml output. */
   def specOutput(spec: Specification): String = new PrettyPrinter(200, 2).format(asXml(spec))
@@ -119,7 +119,10 @@ trait Xml extends File {
    * @returns the specification results translated as to xml (including subspecifications)
    */
   def asXml(s: Specification): Elem = {
-    <spec name={s.name} description={s.description} expectations={s.expectationsNb.toString} failures={s.failures.size.toString} errors={s.errors.size.toString}>
+    <spec name={s.name} description={s.description} 
+      expectations={if (planOnly()) "0" else s.expectationsNb.toString} 
+      failures={if (planOnly()) "0" else s.failures.size.toString} 
+      errors={if (planOnly()) "0" else s.errors.size.toString}>
       {s.subSpecifications map (asXml(_))}
       {s.systems map (asXml(_))}
     </spec>
@@ -129,20 +132,26 @@ trait Xml extends File {
    * @returns the sus results translated as to xml 
    */
   def asXml(sus: Sus): Elem = 
-    <sus description={sus.description} expectations={sus.expectationsNb.toString} failures={sus.failures.size.toString} errors={sus.errors.size.toString}>
+    <sus description={sus.description} expectations={if (planOnly()) "0" else sus.expectationsNb.toString} 
+                                       failures={if (planOnly()) "0" else sus.failures.size.toString} 
+                                       errors={if (planOnly()) "0" else sus.errors.size.toString}>
       {sus.examples map (asXml(_))}
     </sus>
 
   /**
    * @returns the example results translated as to xml (including sub-examples) 
    */
-  def asXml(e: Example): Elem = 
-    <example description={e.description} expectations={e.expectationsNb.toString} failures={e.failures.size.toString} errors={e.errors.size.toString}>
-     { e.failures map (asXml(_)) }
-     { e.skipped map (asXml(_)) }
-     { e.errors map (asXml(_)) }
-     { e.examples map (asXml(_)) }
+  def asXml(e: Example): Elem = {
+    <example description={e.description} 
+      expectations={if (planOnly()) "0" else e.expectationsNb.toString} 
+      failures={if (planOnly()) "0" else e.failures.size.toString} 
+      errors={if (planOnly()) "0" else e.errors.size.toString}>
+     { if (!planOnly()) e.failures map (asXml(_)) else NodeSeq.Empty } 
+     { if (!planOnly()) e.skipped map (asXml(_)) else NodeSeq.Empty }
+     { if (!planOnly()) e.errors map (asXml(_)) else NodeSeq.Empty }
+     { if (!planOnly()) e.examples map (asXml(_)) else NodeSeq.Empty }
     </example>
+    }
 
   /**
    * @returns an error translated as to xml 

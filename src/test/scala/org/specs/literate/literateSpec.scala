@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.literate
 import org.specs.runner._
@@ -79,7 +79,7 @@ h3. Properties
   { """After prompting for a name like {"Peter".a}, the system must greet the visitor with the person name: {"hello Peter".it}{ it must be_==(hello(a)) }""" >@ }
 
 gives:
-   {"<ex class=\"success\">"}After prompting for a name like _{"Peter".a}_, the system must greet the visitor with the person name: _{"hello Peter".it}_{ it must be_==(hello(a)) }{"</ex>"}
+   {"<ex class=\"success\">"}After prompting for a name like _{"Peter".a}_, the system must greet the visitor with the person name: _{"hello Peter".it}_{ it() must be_==(hello(a)) }{"</ex>"}
 
 </t> isSus
 }

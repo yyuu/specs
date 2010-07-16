@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2009 Eric Torreborre <etorreborre@yahoo.com>
+ * Copyright (c) 2007-2010 Eric Torreborre <etorreborre@yahoo.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -14,16 +14,18 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.runner
 
+import org.specs._
 import org.specs.specification._
 import _root_.junit.framework._
 import _root_.org.junit.runner._
 import org.specs.collection.JavaCollectionsConversion._
 import org.specs.util.Stacktraces
 import org.specs.execute._
+import org.specs.util.Property
 
 /**
  * The strategy for running Specifications with JUnit is as follow:<p>
@@ -31,7 +33,7 @@ import org.specs.execute._
  * -the specifications are used to create JUnit3 TestSuite and TestCase objects
  * -however, since TestSuite is not an interface, a JUnitSuite trait is used to represent it (and the JUnitSuite uses a TestSuite internally to hold the tests)
  *   -a specification is represented as a JUnitSuite
- *   -a system under test (sus) is represented as an ExamplesTestSuite <: JUnitSuite
+ *   -a system under specification (sus) is represented as an ExamplesTestSuite <: JUnitSuite
  *   -an example is represented as an ExampleTestCase <: TestCase
  *
  * Then, the JUnitSuite which implements the junit.framework.Test interface can be run using
@@ -44,7 +46,7 @@ import org.specs.execute._
 trait JUnitSuite extends Test {
   /** embedded JUnit3 TestSuite object */
   val testSuite = new TestSuite
-
+  
   /**this variable is set to true if the suite has been initialized */
   private var initialized = false
 
@@ -98,16 +100,21 @@ trait JUnitSuite extends Test {
 /**
  * Extension of a JUnitSuite initializing the suite with one or more specifications
  */
-trait JUnit extends JUnitSuite with Reporter {
+trait JUnit extends JUnitSuite with Reporter with ExtendedJUnitSuite {
   def initialize = {
     if (filteredSpecs.size > 1)
       setName(this.getClass.getName.replaceAll("\\$", ""))
     else
-      setName(filteredSpecs.firstOption.map(_.description).getOrElse("no specs"))
-    filteredSpecs foreach {
-      specification =>
-              specification.subSpecifications.foreach{s: Specification => addTest(new JUnit3(s))}
-              specification.systems foreach {sus => addTest(new ExamplesTestSuite(sus.description + " " + sus.verb, sus.examples, sus.skipped.firstOption))}
+      setName(filteredSpecs.headOption.map(_.description).getOrElse("no specs"))
+    filteredSpecs foreach { specification =>
+      specification.subSpecifications.foreach(s => addTest(new JUnit3(s)))
+      specification.systems foreach { sus => 
+        val examples = if (!planOnly() && sus.hasOwnFailureOrErrors) sus :: sus.examples else sus.examples
+		if (sus.isAnonymous)
+		  examples foreach { e => this.addExample(e, "") }
+		else
+		  addTest(new ExamplesTestSuite(sus.description + " " + sus.verb, examples, sus.ownSkipped.headOption))
+      }
     }
   }
 }
@@ -136,25 +143,14 @@ class JUnit4(val specifications: Specification*) extends JUnit {
  * If an example has subExamples, they won't be shown as sub tests because that would necessitate to
  * run the example during the initialization time.
  */
-class ExamplesTestSuite(description: String, examples: Iterable[Example], skipped: Option[Throwable]) extends JUnitSuite with Stacktraces {
-
-  /**return true if the current test is executed with Maven */
-  lazy val isExecutedFromMaven = isExecutedFrom("org.apache.maven.surefire.Surefire.run")
+class ExamplesTestSuite(description: String, examples: Iterable[Examples], skipped: Option[Throwable]) extends JUnitSuite with ExtendedJUnitSuite {
 
   /**
    * create one TestCase per example
    */
   def initialize = {
     setName(description)
-    examples foreach {  example =>
-      // if the test is run with Maven the sus description is added to the example description for a better
-      // description in the console
-      val exampleDescription = (if (isExecutedFromMaven) (description + " ") else "") + example.description
-      if (example.examples.isEmpty)
-        addTest(new ExampleTestCase(example, exampleDescription))
-      else
-        addTest(new ExamplesTestSuite(exampleDescription, example.examples, None))
-    }
+    examples foreach {  example => this.addExample(example, description) }
   }
 
   /**
@@ -164,11 +160,31 @@ class ExamplesTestSuite(description: String, examples: Iterable[Example], skippe
    * and the JUnitSuiteRunner will interpret this as an ignored test (this functionality wasn't available in JUnit3)
    */
   override def run(result: TestResult) = {
-    skipped.map(e => result.addFailure(this, new SkippedAssertionError(e)))
+    if (!JUnitOptions.planOnly()) skipped.map(e => result.addFailure(this, new SkippedAssertionError(e)))
     super.run(result)
   }
 }
 
+trait ExtendedJUnitSuite extends Stacktraces {
+  
+  /**return true if the current test is executed with Maven */
+  lazy val isExecutedFromMaven = isExecutedFrom("org.apache.maven.surefire.Surefire.run")
+
+  implicit def toExtendedSuite(s: JUnitSuite) = new ExtendedSuite(s)
+  
+  class ExtendedSuite(s: JUnitSuite) {
+    def addExample(example: Examples, description: String) = {
+	      // if the test is run with Maven the sus description is added to the example description for a better
+      // description in the console
+      val exampleDescription = (if (isExecutedFromMaven) (description + " ") else "") + example.description
+      if (JUnitOptions.planOnly() || !example.hasSubExamples)
+        s.addTest(new ExampleTestCase(example, exampleDescription))
+      else {
+        s.addTest(new ExamplesTestSuite(exampleDescription, example.examples, None))
+      }
+    }
+  }
+}
 /**
  * A <code>ExampleTestCase</code> reports the result of an example<p>
  * It overrides the run method from <code>junit.framework.TestCase</code>
@@ -176,11 +192,11 @@ class ExamplesTestSuite(description: String, examples: Iterable[Example], skippe
  *
  * When possible, the description of the subexamples are added to their failures and skipped exceptions
  */
-class ExampleTestCase(example: Example, description: String) extends TestCase(description.replaceAll("\n", " ")) {
+class ExampleTestCase(val example: Examples, description: String) extends TestCase(description.replaceAll("\n", " ")) {
   override def run(result: TestResult) = {
-    if (example.ownSkipped.isEmpty)
+    if (JUnitOptions.planOnly() || example.ownSkipped.isEmpty)
       result.startTest(this)
-    def report(ex: Example, context: String) = {
+    def report(ex: Examples, context: String) = {
       ex.ownFailures foreach {
         failure: FailureException =>
                 result.addFailure(this, new SpecAssertionFailedError(UserError(failure, context)))
@@ -194,15 +210,19 @@ class ExampleTestCase(example: Example, description: String) extends TestCase(de
                 result.addError(this, new SpecError(UserError(error, context)))
       }
     }
-    report(example, "")
-    example.examples foreach {subExample => report(subExample, subExample.description + " -> ")}
-    if (example.ownSkipped.isEmpty)
+    if (!JUnitOptions.planOnly()) { 
+      report(example, "")
+      example.examples foreach {subExample => report(subExample, subExample.description + " -> ")}
+    }
+    if (JUnitOptions.planOnly() || example.ownSkipped.isEmpty)
       result.endTest(this)
   }
 }
 
 case class UserError(t: Throwable, context: String) extends Throwable {
   setStackTrace(t.getStackTrace)
+  override def getCause = t.getCause
+
   override def getMessage = {
     t match {
       case f: FailureException => context + t.getMessage
@@ -217,6 +237,7 @@ case class UserError(t: Throwable, context: String) extends Throwable {
  */
 class SpecAssertionFailedError(t: Throwable) extends AssertionFailedError(t.getMessage) {
   override def getStackTrace = t.getStackTrace
+  override def getCause = t.getCause
 
   override def printStackTrace = t.printStackTrace
 
@@ -232,6 +253,8 @@ class SpecAssertionFailedError(t: Throwable) extends AssertionFailedError(t.getM
 class SpecError(t: Throwable) extends java.lang.Error(t.getMessage) {
   override def getStackTrace = t.getStackTrace
 
+  override def getCause = t.getCause
+
   override def printStackTrace = t.printStackTrace
 
   override def printStackTrace(w: java.io.PrintStream) = t.printStackTrace(w)
@@ -239,3 +262,10 @@ class SpecError(t: Throwable) extends java.lang.Error(t.getMessage) {
   override def printStackTrace(w: java.io.PrintWriter) = t.printStackTrace(w)
 }
 class SkippedAssertionError(t: Throwable) extends SpecAssertionFailedError(t)
+
+/**
+ * This trait allows to pass system options to Tests and TestSuites
+ */
+object JUnitOptions {
+  val planOnly = Property(System.getProperty("plan") != null)
+}

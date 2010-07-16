@@ -14,10 +14,9 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.form
-import scala.collection.mutable._
 import scala.xml._
 import org.specs.util.Plural._
 import org.specs.execute.Status
@@ -43,13 +42,14 @@ import org.specs.execute.Status
  * </code>
  */
 class SeqForm[T](title: Option[String], val seq: Seq[T]) extends TableForm(title) with SeqFormEnabled[T] {
+  def this(s: String, seq: Seq[T]) = this(Some(s), seq)
   def this(seq: Seq[T]) = this(None, seq)
   def this() = this(None, List())
 }
 trait SeqFormEnabled[T] extends TableFormEnabled {
   val seq: Seq[T]
   /** list of declared lines which are expected but not received as actual */
-  private var unmatchedLines = new ListBuffer[LineForm]
+  private var unmatchedLines = new scala.collection.mutable.ListBuffer[LineForm]
   /** number of already expected lines */
   private var expectedLinesNb = 0
   /** 
@@ -77,7 +77,7 @@ trait SeqFormEnabled[T] extends TableFormEnabled {
   def tr(l: EntityLineForm[T]): LineForm = line { (actual: Option[T]) => 
     l.entityIs(actual)
   }
-  def setHeader[F <: LineForm](line: F): F = {
+  override def setHeader[F <: LineForm](line: F): F = {
     if (rowsNb == 0) inNewRow(line.header)
     line
   }

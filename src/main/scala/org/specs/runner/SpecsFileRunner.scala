@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.runner
 
@@ -32,14 +32,14 @@ import org.specs.specification._
  * The systems and examples can also be filtered by specifying patterns. These patterns can be passed as System properties,
  * by specifying -Dsus="regexp" or -Dexample="regexp".
  */
-class SpecsFileRunner(path: String, val specFilterPattern: String, susFilter: String, exampleFilter: String) extends
+class SpecsFileRunner(path: String, val specFilterPattern: String, filterForSus: String, filterForExample: String) extends
   SpecsFinder(path, specFilterPattern, true) with Console {
 
   /** define the sus pattern on the SpecsFilter trait. */
-  override def susFilterPattern = susFilter
+  override def susFilterPattern = filterForSus
 
   /** define the example pattern on the SpecsFilter trait. */
-  override def exampleFilterPattern = exampleFilter
+  override def exampleFilterPattern = filterForExample
 
   /** short constructor with no filter for sus or examples. */
   def this(path: String, specFilterPattern: String) = this(path, specFilterPattern, ".*", ".*")

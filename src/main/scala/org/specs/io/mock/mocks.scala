@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.io.mock
 
@@ -76,9 +76,9 @@ trait MockFileSystem extends FileSystem {
   def setWritable(path: String) = if (!canWrite(path)) (writableFiles ::= path)
 
   /** sets a file as not readable */
-  def setNotReadable(path: String) = readableFiles = readableFiles.remove(_ == path)
+  def setNotReadable(path: String) = readableFiles = readableFiles.filterNot(_ == path)
   /** sets a file as not writable */
-  def setNotWritable(path: String) = writableFiles = writableFiles.remove(_ == path)
+  def setNotWritable(path: String) = writableFiles = writableFiles.filterNot(_ == path)
 
   /** overrides the canRead definition checking in the readableFiles list */
   override def canRead(path: String) = readableFiles.exists(_ == path)
@@ -93,8 +93,7 @@ trait MockFileSystem extends FileSystem {
   /** overrides the isDirectory definition checking if it ends with / (partial definition) */
   override def isDirectory(path: String) = !isFile(path)
   /** overrides the listFiles definition */
-  override def listFiles(path: String) = children.get(path.replaceAll("\\\\", "/")).getOrElse(List[String]()).toList
-
+  override def listFiles(path: String) = children.get(path.replaceAll("\\\\", "/")).map(_.toList).getOrElse(Nil)
   /** @return a default file path. All default file paths will be different from each other */
   def defaultFilePath = "name" + files.size + defaultExtension
 
@@ -123,7 +122,12 @@ trait MockFileSystem extends FileSystem {
   
   override def exists(path: String) = files.contains(path)
   
-  override def inputStream(filePath: String) = new java.io.StringBufferInputStream(readFile(filePath))
+  override def inputStream(filePath: String) = new java.io.InputStream {
+	val reader = new java.io.StringReader(readFile(filePath))
+	def read() = {
+	  reader.read()
+	}
+  }
 }
 
 /**

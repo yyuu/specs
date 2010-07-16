@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.matcher
 import org.specs.matcher.MatcherUtils._
@@ -47,12 +47,13 @@ trait IterableBaseMatchers { outer =>
   def containAll[T](l: Iterable[T])(implicit details: Detailed) = new Matcher[Iterable[T]]() {
     def apply(v: => Iterable[T]) = {
       val iterable = v;
-      import org.specs.Products._
-      val failureMessage = details match {
-        case full: fullDetails => EditMatrix(d(iterable.mkString("\n")), q(l.mkString("\n"))).showDistance(full.separators).toList.mkString(" doesn't contain all of ")
-        case no: noDetails => d(iterable) + " doesn't contain all of " + q(l)
-      }
-      (l.forall(x => iterable.exists(_ == x)), d(iterable) + " contains all of " + q(l), failureMessage)
+      val failureMessage = if (iterable.toString.size >= 30) 
+        d(iterable.toString.split(",").mkString("\n")) + "\n\ndoesn't contain all of\n\n" + l.mkString("\n")
+      else
+        d(iterable) + " doesn't contain all of " + q(l)
+      (l.forall(x => iterable.exists(_ == x)), 
+       d(iterable) + " contains all of" + q(l), 
+       failureMessage)
     }
   }
 
@@ -67,12 +68,13 @@ trait IterableBaseMatchers { outer =>
   def containInOrder[T](l: Iterable[T])(implicit details: Detailed) = new Matcher[Iterable[T]](){
     def apply(v: => Iterable[T]) = {
       val iterable = v;
-      import org.specs.Products._
-      val failureMessage = details match {
-        case full: fullDetails => EditMatrix(d(iterable.mkString("\n")), q(l.mkString("\n"))).showDistance(full.separators).toList.mkString("", " doesn't contain all of ", " in order")
-        case no: noDetails => d(iterable) + " doesn't contain all of " + q(l) + " in order"
-      }
-      (iterable.containsInOrder(l), d(iterable) + " contains all of " + q(l) + " in order", failureMessage)
+      val failureMessage = if (iterable.toString.size >= 30) 
+        d(iterable.toString.split(",").mkString("\n")) + "\n\ndoesn't contain all of\n\n" + l.mkString("\n") + " in order"
+      else
+        d(iterable) + " doesn't contain all of " + q(l) + " in order"  
+      (iterable.containsInOrder(l), 
+       d(iterable) + " contains all of " + q(l) + " in order", 
+       failureMessage)
     }
   }
 
@@ -162,8 +164,12 @@ trait IterableBaseMatchers { outer =>
   /**
    * Matches if the size is n
    */
-  def haveSize[T <% {def size: Int}](n: Int) = new Matcher[T](){
-    def apply(v: => T) = {val collection = v; (collection.size == n, d(collection) + " has size " + n, d(collection) + " doesn't have size " + n + ". It has size " + collection.size)}
+  def haveSize[T <% {def size: Int}](n: Int) = new SizeMatcher[T](n)
+}
+class SizeMatcher[T <% {def size: Int}](n: Int) extends Matcher[T] {
+  def apply(v: => T) = {
+    val collection = v
+    (collection.size == n, d(collection) + " has size " + n, d(collection) + " doesn't have size " + n + ". It has size " + collection.size)
   }
 }
 trait IterableBeHaveMatchers { outer: IterableBaseMatchers =>
@@ -183,7 +189,7 @@ trait IterableBeHaveMatchers { outer: IterableBaseMatchers =>
   implicit def toArrayResultMatcher[T](result: Result[Array[T]]) = new ArrayResultMatcher(result)
   class ArrayResultMatcher[T](result: Result[Array[T]]) {
     def size(i: Int) = result.matchWithMatcher(outer.size(i) ^^ ((t:Array[T]) => t.toList.asInstanceOf[Iterable[T]]))
-    def contain(a: T) = result.matchWith(outer.contain(a))
+    def contain(a: T) = result.matchWith(outer.contain(a) ^^ ((t:Array[T]) => t.toList.asInstanceOf[Iterable[T]]))
     def have(f: T =>Boolean) = result.matchWith(outer.have(f) ^^ ((t:Array[T]) => t.toList.asInstanceOf[Iterable[T]]))
   }
   implicit def toListResultMatcher[T](result: Result[List[T]]) = new ListResultMatcher(result)
@@ -212,6 +218,41 @@ trait IterableBeHaveMatchers { outer: IterableBaseMatchers =>
     def size(i: Int) = result.matchWithMatcher(outer.size(i))
     def contain(a: T) = result.matchWith(outer.contain(a))
     def have(f: T =>Boolean) = result.matchWith(outer.have(f))
+  }
+  import scala.collection.JavaConversions._
+  private def convertCollection[U](c: java.util.Collection[U]): Iterable[U] = {
+    val javalist = new java.util.ArrayList[U]()
+    javalist.addAll(c)
+    val list = new scala.collection.mutable.ListBuffer[U]()
+    for (a <- asList(javalist)) list.append(a)
+    list.toList
+  }
+  implicit def toJavaCollectionResultMatcher[S](result: Result[java.util.Collection[S]]) = new JavaCollectionResultMatcher(result)
+  class JavaCollectionResultMatcher[S](result: Result[java.util.Collection[S]]) {
+    def size(i: Int) = result.matchWithMatcher(outer.size(i) ^^ (convertCollection(_)))
+    def contain(a: S) = result.matchWith(outer.contain(a) ^^ ((m: java.util.Collection[S]) => convertCollection(m)))
+  }
+  implicit def toJavaListResultMatcher[T](result: Result[java.util.List[T]]) = new JavaListResultMatcher(result)
+  class JavaListResultMatcher[T](result: Result[java.util.List[T]]) {
+    def size(i: Int) = result.matchWithMatcher(outer.size(i) ^^ (asList(_)))
+    def contain(a: T) = result.matchWith(outer.contain(a) ^^ ((l: java.util.List[T]) => asList(l)))
+    def have(f: T =>Boolean) = result.matchWith(outer.have(f) ^^ ((l: java.util.List[T]) => asList(l)))
+  }
+  implicit def toJavaSetResultMatcher[T](result: Result[java.util.Set[T]]) = new JavaSetResultMatcher(result)
+  class JavaSetResultMatcher[T](result: Result[java.util.Set[T]]) {
+    def size(i: Int) = result.matchWithMatcher(outer.size(i) ^^ (asSet(_)))
+    def contain(a: T) = result.matchWith(outer.contain(a) ^^ ((l: java.util.Set[T]) => asSet(l)))
+    def have(f: T =>Boolean) = result.matchWith(outer.have(f) ^^ ((l: java.util.Set[T]) => asSet(l)))
+  }
+  implicit def toAJavaMapResultMatcher[S, U](result: Result[java.util.Map[S, U]]) = new JavaMapResultMatcher[S, U](result)
+  class JavaMapResultMatcher[S, U](result: Result[java.util.Map[S, U]]) {
+    def size(i: Int) = result.matchWithMatcher(outer.size(i) ^^ ((m: java.util.Map[S, U]) => convertCollection(m.entrySet)))
+    def contain(a: (S, U)) = result.matchWith(outer.contain(a) ^^ ((m: java.util.Map[S, U]) => convertCollection(m.entrySet)))
+  }
+  implicit def toAMapResultMatcher[S, T](result: Result[Map[S, T]]) = new MapResultMatcher(result)
+  class MapResultMatcher[S, T](result: Result[Map[S, T]]) {
+    def size(i: Int) = result.matchWithMatcher(outer.size(i))
+    def contain(a: (S,T)) = result.matchWith(outer.contain(a))
   }
   implicit def toStringListResultMatcher(result: Result[List[String]]) = new StringListResultMatcher(result)
   class StringListResultMatcher(result: Result[List[String]]) {

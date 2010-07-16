@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.samples
 import org.specs._
@@ -24,9 +24,9 @@ import org.specs.matcher._
 
 class stringSpec extends SpecificationWithJUnit("String") with ScalaCheck {
 
-   "startsWith" verifies ((a: String, b: String) => (a + b).startsWith(a)).set(minTestsOk->25)
+   "startsWith" verifies ((a: String, b: String) => (a + b).startsWith(a))
    "endsWith" verifies { (a: String, b: String) => (a + b).endsWith(b) }
-   "concat" verifies { (a: String, b: String) => (a + b).length == a.length + b.length }
+   "concat" verifies { (a: String, b: String) => (a + b).length == (a.length + b.length) }
    "substring" verifies { (a: String, b: String) => (a + b).substring(a.length) == b }
 
 }

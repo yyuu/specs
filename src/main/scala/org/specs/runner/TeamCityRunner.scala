@@ -14,13 +14,14 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.runner
 import org.specs.specification._
-import org.specs.ExtendedThrowable._
+import org.specs.util.ExtendedThrowable._
 import org.specs.io._
 import org.specs.util._
+import org.specs._
 
 /**
  * TeamCity string formatting utilities.
@@ -106,12 +107,12 @@ trait TeamCityReporter extends OutputReporter with TeamCityOutput {
    * In the TeamCity web interface, only the "details" field is shown. 
    * Exceptions stacktraces are mapped onto it.
    */
-  override def reportExample(example: Example, padding: String) = {
+  override def reportExample(example: Examples, padding: String) = {
     val testName = currentSpec.value.name + "." + example.description
     testStarted(testName)
     
     if (!example.failureAndErrors.isEmpty) {
-      def exampleMessages(e: Example) = e.failureAndErrors.map(throwableToMessage _).mkString("; ")
+      def exampleMessages(e: Examples) = e.failureAndErrors.map(throwableToMessage _).mkString("; ")
       def subExampleMessages(e: Example) = e.failureAndErrors.map(e.description + ": " + throwableToMessage(_))
       val ms = if (example.examples.isEmpty)
                  exampleMessages(example)

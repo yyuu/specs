@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.matcher
 import org.specs.matcher.MatcherUtils._
@@ -119,7 +119,7 @@ trait MapBaseMatchers {
     }
    }
 }
-trait MapBeHaveMatchers { this: MapBaseMatchers =>
+trait MapBeHaveMatchers { outer: MapBaseMatchers =>
   /** 
    * matcher aliases and implicits to use with BeVerb and HaveVerb 
    */
@@ -130,6 +130,13 @@ trait MapBeHaveMatchers { this: MapBaseMatchers =>
   implicit def toMapValueResultMatcher[S, T](result: Result[Map[S, T]]) = new MapValueResultMatcher(result)
   class MapValueResultMatcher[S, T](result: Result[Map[S, T]]) {
     def value(k: T) = result.matchWithMatcher(haveValue(k)) 
+  }
+  import scala.collection.JavaConversions._
+
+  implicit def toJavaMapResultMatcher[S, U](result: Result[java.util.Map[S, U]]) = new JavaMapResultMatcher[S, U](result)
+  class JavaMapResultMatcher[S, U](result: Result[java.util.Map[S, U]]) {
+    def key(k: S) = result.matchWithMatcher(haveKey(k) ^^ ((m: java.util.Map[S, U]) => asMap(m))) 
+    def value(k: U) = result.matchWithMatcher(haveValue(k) ^^ ((m: java.util.Map[S, U]) => asMap(m))) 
   }
   implicit def toMapResultMatcher[S, T](result: Result[Map[S, T]]) = new MapResultMatcher(result)
   class MapResultMatcher[S, T](result: Result[Map[S, T]]) {

@@ -14,11 +14,12 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.specification
 import org.specs.matcher._
 import org.specs.runner._
+import org.specs._
 
 class taggedSpec extends SpecificationWithJUnit {
   "A tagged object" should { createTagged.before
@@ -50,7 +51,7 @@ class taggedSpec extends SpecificationWithJUnit {
       val other = (new Object with Tagged).addTag("a").accept("a").reject("b")
 
       tagged.tagWith(other)
-      tagged.tags must_== other.tags
+      tagged.tagList must_== other.tagList
       tagged.accepted must_== other.accepted
       tagged.rejected must_== other.rejected
     }
@@ -81,19 +82,19 @@ class taggedSpec extends SpecificationWithJUnit {
   "A tagged object with subcomponents" should { createTaggedTree.before
     "propagate its tags to the subcomponents" in {
       taggedTree.tag("1")
-      taggedTree.taggedComponents.first.tags must haveSameElementsAs(List(Tag("1")))
+      taggedTree.taggedComponents.head.tagNames must haveSameElementsAs(List("1"))
     }
     "clear the subcomponents tags when clearing its own" in {
       taggedTree.tag("1")
       taggedTree.clearTags
-      taggedTree.taggedComponents.first.tags must beEmpty
+      taggedTree.taggedComponents.head.tagList must beEmpty
     }
     "be able to accept all tags if some tags were previously rejected" in {
       taggedTree.tag("1")
       taggedTree.acceptTag("1")
       taggedTree.acceptAnyTag
-      taggedTree.taggedComponents.first.accepted must beEmpty
-      taggedTree.taggedComponents.first.rejected must beEmpty
+      taggedTree.taggedComponents.head.accepted must beEmpty
+      taggedTree.taggedComponents.head.rejected must beEmpty
     }
   }
   var tagged = new Object with Tagged

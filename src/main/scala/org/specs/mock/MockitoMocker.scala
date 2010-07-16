@@ -14,12 +14,11 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
-
 package org.mockito
 import org.mockito.stubbing.Answer
-import org.mockito.internal.verification.api.VerificationMode
+import org.mockito.verification.VerificationMode
 
 /**
  * This class is created to get an access to the MOCKING_PROGRESS Mockito package variable which is package protected.
@@ -29,12 +28,19 @@ import org.mockito.internal.verification.api.VerificationMode
  */
 class MockitoMocker {
   def verify(mode: VerificationMode) = Mockito.verify(Mockito.mock(classOf[List[Int]]), mode)
-  def mock[T](implicit m: scala.reflect.Manifest[T]): T = Mockito.mock(m.erasure).asInstanceOf[T]
-  def mock[T](implicit m: scala.reflect.Manifest[T], v: org.mockito.ReturnValues): T = Mockito.mock(m.erasure, v).asInstanceOf[T]
-  def smartMock[T](implicit m: scala.reflect.Manifest[T]): T = Mockito.mock(m.erasure, Mockito.RETURNS_SMART_NULLS).asInstanceOf[T]
+  def mock[T](implicit m: scala.reflect.ClassManifest[T]): T = Mockito.mock(m.erasure).asInstanceOf[T]
+  def mock[T](name: String)(implicit m: scala.reflect.ClassManifest[T]): T = Mockito.mock(m.erasure, name).asInstanceOf[T]
+  def mock[T, A](implicit m: scala.reflect.ClassManifest[T], a: org.mockito.stubbing.Answer[A]): T = Mockito.mock(m.erasure, a).asInstanceOf[T]
+  def smartMock[T](implicit m: scala.reflect.ClassManifest[T]): T = Mockito.mock(m.erasure, Mockito.RETURNS_SMART_NULLS).asInstanceOf[T]
   def spy[T](m: T): T = Mockito.spy(m)
   def when[V](v: V) = Mockito.when(v)
   def times(i: Int): org.mockito.internal.verification.Times = Mockito.times(i).asInstanceOf[org.mockito.internal.verification.Times]
+  def verify[M <: AnyRef](inOrder: Option[InOrder], m: M, v: VerificationMode) = {
+    inOrder match {
+      case Some(ordered) => ordered.verify(m, v)
+      case None => Mockito.verify(m, v)
+    }
+  }
   def verify[M](m: M, v: VerificationMode) = Mockito.verify(m, v)
   def doReturn[T](t: T) = Mockito.doReturn(t)
   def doAnswer[T](a: Answer[T]) = Mockito.doAnswer(a)

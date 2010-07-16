@@ -14,8 +14,8 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
- */ 
+ * DEALINGS IN THE SOFTWARE.
+ */
 package org.specs.mock
 import org.specs._
 
@@ -46,34 +46,18 @@ With the following mocks: {"""
 <ex>We can check that some calls happen in a given order</ex>: 
   
 { """new s {
-      (m1.get(0) on m1).atLeastOnce then
-      (m2.get(0) on m2)             were called.inOrder
+      there was atLeastOne(m1).get(0) then
+                one(m2).get(0) orderedBy (m1, m2)
      }.isOk""" snip it } 
 { >("true")}
 
 <ex>If they don't, there should be a failure message</ex>: 
   
 { """new s {
-      // use "theMethod" if you want to avoid implicit calls
-      theMethod(m2.get(0)).on(m1) then
-      theMethod(m1.get(0)).on(m2) were called.inOrder
-     }.failures.first.getMessage""" snip it } 
-{ >("The methods were not called in the right order: Wanted but not invoked: list.get(0)")}
-
-<ex>Implicit def can also be removed for better readability</ex>: 
-  
-{ """new s {
-      m1.add("1")
-      m1.add("1")
-      m2.add("2")
-
-     (m1.add("1") on m1).times(2) then 
-     (m2.add("2") on m2)          were called.inOrder
-     }.isOk""" snip it } 
-{ >("true")}
-
-
-
+      there was one(m2).get(0) then
+                atLeastOne(m1).get(0) orderedBy (m1, m2)
+     }.failures.head.getMessage""" snip it } 
+{ >("The mock was not called as expected:")}
 
   </wiki> isSus
 }

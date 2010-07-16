@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.form
 import org.specs.xml.Xhtml._
@@ -47,4 +47,23 @@ trait Tabs extends Layout { outer =>
       }
     }
   }
+  /**
+   * create tabs with an overall title from a list of forms
+   */
+  def tabs[T <: Form](title: String, formsToTab: T*): Form = toTabs(title, formsToTab.map(f => (f.title, f)):_*)
+  /**
+   * create tabs with an overall title from a list of (tab title, form)
+   */
+  def toTabs[T <: Form](title: String, formsToTab: (String, T)*): Form = {
+    new Form(title) {
+      new tabs {
+        formsToTab foreach { tabTitleAndForm => val (t, f) = tabTitleAndForm
+          new tab(t) {
+            trs(f.rows)
+          }
+        }
+      }
+    }
+  }
+
 }

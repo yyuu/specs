@@ -1,10 +1,34 @@
+/**
+ * Copyright (c) 2007-2009 Eric Torreborre <etorreborre@yahoo.com>
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+ * and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+ * the Software. Neither the name of specs nor the names of its contributors may be used to endorse or promote
+ * products derived from this software without specific prior written permission.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+ * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+ * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
 package org.specs.specification
 import org.specs.execute.{ DefaultResults, FailureException, SkippedException }
 import org.specs.util._
 
+/**
+ * This trait models the structure of an Example with:<ul>
+ * <li>subexamples</li>
+ * <li>an example filter, which is a function filtering examples to execute</li>
+ * </ul>
+ */
 trait ExampleStructure extends TreeNode with Tagged with DefaultResults { 
   
-  /** number of <code>Assert</code> objects which refer to that Example */
+  /** number of <code>Expecatble</code> objects which refer to that Example */
   protected[specification] var thisExpectationsNumber = 0
   /** examples describing the sus behaviour */
   var exampleList = List[Example]()
@@ -28,6 +52,8 @@ trait ExampleStructure extends TreeNode with Tagged with DefaultResults {
   def allExamples: List[Examples]
   /** @return the total number of expectations for this sus */
   def ownExpectationsNb = { executeExamples; thisExpectationsNumber }
+ /** @return true if there are failures or errors */
+  def hasOwnFailureOrErrors = !(ownFailures ::: ownErrors).isEmpty
   /** @return the failures of this example, executing the example if necessary */
   def ownFailures: List[FailureException] = { executeExamples; thisFailures.toList }
   /** @return the skipped messages for this example, executing the example if necessary  */
@@ -51,21 +77,36 @@ trait ExampleStructure extends TreeNode with Tagged with DefaultResults {
     executeExamples
     exampleList
   }
-  def executeExamples() : Unit = {}
+  /** execute the example, with possibly may create subexamples in order to be able to query them */
+  def executeExamples() : Unit
+  /** remove all failures and errors */
   def resetForExecution: this.type = {
     thisFailures.clear
     thisErrors.clear
     thisSkipped.clear
     this
   }
+  /**
+   * set the execution context for a cloned example: tags, filter, beforeFirst failure
+   */
+  private[specification] def prepareExecutionContextFrom(other: Examples) = {
+    this.tagWith(other)
+    this.examplesFilter = other.examplesFilter
+  }
+  /** 
+   * copy the execution results from another example. This method is used to copy the results from another example
+   * executed in isolation in another specification.
+   */
   def copyFrom(other: ExampleStructure) = {
     examplesFilter = other.examplesFilter
     hardCopyResults(other)
     other.exampleList.foreach { e => 
       val ex = this.createExample(e.description.toString)
       ex.execution = e.execution
-      ex.tagWith(e)
+      ex.execution.map(_.example = ex)
       ex.execution.map(_.resetForExecution)
+      ex.tagWith(e)
+      ex.hasSomeSubExamples = e.hasSomeSubExamples
     }
     thisExpectationsNumber = other.thisExpectationsNumber
   }

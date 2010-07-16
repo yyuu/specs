@@ -14,12 +14,12 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.form
 import org.specs.util.Property
 
-class entityLinePropSpec extends spex.Specification {
+class entityLinePropSpec extends org.spex.Specification {
   def executor[T] = (a: T, m:org.specs.matcher.Matcher[T]) => a must m
   "an entity line prop" should {
     val e = EntityLineProp("label", 5, (_:String).size, "Hello", new MatcherConstraint(Some(5), executor))

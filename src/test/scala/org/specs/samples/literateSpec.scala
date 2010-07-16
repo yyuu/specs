@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.samples
 import org.specs.specification._
@@ -22,6 +22,7 @@ import org.specs.matcher._
 import org.specs.util._
 import org.specs.form._
 import org.specs.runner._
+import org.specs._
 
 class helloWorld extends HtmlSpecification("Hello World") {
   def greet = "hello"
@@ -48,7 +49,7 @@ Then, other languages, like <ex>French and German should be supported too</ex>
 
  </textile>
 }
-class tabsSpec extends HtmlSpecificationWithJUnit("Tabs sample") {
+class tabsSpecification extends HtmlSpecificationWithJUnit("Tabs sample") {
  class ClubMember extends Form {
    new tabs() {
      new tab("Contact details") {
@@ -68,7 +69,7 @@ class tabsSpec extends HtmlSpecificationWithJUnit("Tabs sample") {
   </textile>
 }
 
-class fieldsFormSpec extends HtmlSpecificationWithJUnit("Fields form") {
+class fieldsFormSpecification extends HtmlSpecificationWithJUnit("Fields form") {
  class Person extends Form {
    val firstName = field("First name", "Eric")
    val lastName = field("Last name", "Torreborre")
@@ -121,13 +122,27 @@ This is a Person form, checking that the initials are set properly on a Person o
 
   </textile>
 }
+class tableFormSpec extends HtmlSpecificationWithJUnit("Table form") {
+  case class Person(n: String, a: Int) extends LineForm {
+    field("Name", n)
+    prop("Age", 35)(a)
+  }
+ "A table form with one line form per line" is <textile> { 
+   new TableForm("Persons") {
+     tr(Person("Eric", 35))
+     tr(Person("Eric again", 35))
+   }.reportTo(this) 
+ }  
+  </textile>
+}
+
 trait PersonBusinessEntities {
   case class Person(firstName: String, lastName: String, address: Address, friends: List[String]) {
     def initials = firstName(0).toString + lastName(0)
   }
   case class Address(number: Int, street: String)
 }
-trait PersonForms extends HtmlSpecificationWithJUnit with PersonBusinessEntities {
+class PersonForms extends HtmlSpecificationWithJUnit with PersonBusinessEntities {
 
   case class PersonForm(t: String, p: Person) extends Form(t) {
     def this(p: Person) = this("Customer", p)

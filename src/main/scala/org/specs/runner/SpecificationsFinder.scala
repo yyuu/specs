@@ -14,20 +14,21 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.runner
 
 import org.specs.io.FileSystem
 import java.util.regex._
 import scala.collection.mutable.Queue
-import org.specs.util.Classes._
-
+import org.specs.util.Classes
+import org.specs.Specification
+import org.specs.util.LazyParameter
 /**
  * Companion SpecsFinder object to create a SpecsFinder returning an aggregate Specification of
  * all the found specifications.
  */
-object SpecsFinder {
+ object SpecsFinder {
   def apply(path: String, pattern: String) = new SpecsFinder(path, pattern, true)
 }
 
@@ -37,28 +38,24 @@ object SpecsFinder {
  */
 case class SpecsFinder(path: String, pattern: String, asOneSpecification: Boolean) extends SpecificationsFinder with SpecsFilter {
 
-  lazy val specs = collectSpecs(asOneSpecification)
+  lazy val specs: Seq[Specification] = collectSpecs(asOneSpecification)
 
-  protected def collectSpecs(asOneSpecification: Boolean) = {
-    val collected = new scala.collection.mutable.ListBuffer[Specification]
-    val specNames = specificationNames(path, pattern)
-    specNames foreach { className =>
-      createSpecification(className).foreach { collected.append(_) }
-    }
+  protected def collectSpecs(asOneSpecification: Boolean): Seq[Specification] = {
+    val collected = specificationNames(path, pattern).toStream.flatMap(createSpecification(_)) 
     if (asOneSpecification) {
 	    object totalSpecification extends Specification {
-	      new java.io.File(path).getAbsolutePath isSpecifiedBy(collected: _*)
+	      declare(new java.io.File(path).getAbsolutePath).isSpecifiedBy(collected.map(s => new LazyParameter(() => s)).toSeq:_*)
 	    }
 	    List(totalSpecification)
     }
     else
-      collected.toList
+      collected.toSeq
   }
 }
 /**
  * This trait browses files on a given path and returns what can be matching specification class names.
  */
-trait SpecificationsFinder extends FileSystem {
+trait SpecificationsFinder extends FileSystem with Classes {
 
    /**
     * @param path a path to a directory containing scala files (it can be a glob: i.e. "dir/**/*spec.scala")
@@ -81,11 +78,15 @@ trait SpecificationsFinder extends FileSystem {
    */
   def collectSpecifications(result: Queue[String], filePath: String, pattern: String): Unit = {
     if (!filePath.endsWith(".scala")) return
-    val specPattern = "\\s*object\\s*(" + pattern + ")\\s*extends\\s*.*Spec.*\\s*\\{"
-    val m = Pattern.compile(specPattern).matcher(readFile(filePath))
-    while (m.find) {
-      result += ((packageName(filePath).map(_ + ".").getOrElse("") + m.group(1).trim) + "$")
+    def addClassNameFor(specType: String, suffix: String) = {
+      val specPattern = "\\s*"+specType+"\\s*(" + pattern + ")\\s*extends\\s*.*"
+      val m = Pattern.compile(specPattern).matcher(readFile(filePath))
+      while (m.find) {
+        result += ((packageName(filePath).map(_ + ".").getOrElse("") + m.group(1).trim) + suffix)
+      }
     }
+    addClassNameFor("object", "$")
+    addClassNameFor("class", "")
   }
 
   /** @return the package declaration at the beginning of a file */
@@ -102,5 +103,11 @@ trait SpecificationsFinder extends FileSystem {
    * Tries to load the class name and cast it to a specification
    * @return None in case of an exception.
    */
-  def createSpecification(className: String): Option[Specification] = createObject[Specification](className)
+  def createSpecification(className: String): Option[Specification] = tryToCreateObject[Specification](className)
+  /**
+   * @return a <code>Specification</code> object from a className if that class is a <code>Specification</code> class.<br>
+   * Tries to load the class name and cast it to a specification
+   * @return None in case of an exception.
+   */
+  def createSpecification(className: String, printMessage: Boolean, printStackTrace: Boolean): Option[Specification] = createObject[Specification](className, printMessage, printStackTrace)
 }

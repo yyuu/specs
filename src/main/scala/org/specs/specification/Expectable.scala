@@ -14,12 +14,13 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.specification
 import org.specs.matcher._
 import org.specs.matcher.Matchers._
-import org.specs.ExtendedThrowable._
+import org.specs.util.ExtendedThrowable._
+import org.specs.util.Property
 import org.specs.Sugar._
 import org.specs.execute._
 
@@ -46,7 +47,7 @@ import org.specs.execute._
  * }
  * </pre>
  */
-class Expectable[T](value: => T) {
+class Expectable[T](expectableValue: => T) {
   /** related example. */
   private var example: Option[Examples] = None
   /** function used to display success values as a result of a match. By default nothing is displayed. */
@@ -94,10 +95,10 @@ class Expectable[T](value: => T) {
       val (result, okMessage, koMessage) = {
         if (nextMatcherMustBeNegated) {
           nextMatcherMustBeNegated = false
-          matcher.not.apply(value)
+          matcher.not.apply(expectableValue)
         } 
         else 
-          matcher.apply(value)
+          matcher.apply(expectableValue)
       }
       result match {
         case false => {
@@ -146,6 +147,8 @@ class Expectable[T](value: => T) {
    * Set a new function to render success values
    */
   def setSuccessValueToString(f: SuccessValue =>String) = successValueToString = f
+  
+  def valueProperty: Property[T] = Property(expectableValue)
 }
 /**
  * The Expect class adds matcher methods to objects which are being specified<br>
@@ -307,7 +310,7 @@ trait OrResults {
         result = r
         result.setAlreadyOk()
       } catch {
-        case f: HasResult[T] => return f.result.matchWith(m)
+        case f: HasResult[_] => return f.asInstanceOf[HasResult[T]].result.matchWith(m)
         case t => throw t
       }
       result
@@ -320,11 +323,11 @@ trait OrResults {
         try { 
           result.nextSignificantMatchMustFail().matchWith(m)
         } catch {
-          case f: HasResult[T] => return result
+          case f: HasResult[_] => return f.asInstanceOf[HasResult[T]].result.matchWith(m)
           case t => throw t
         }
       } catch {
-        case f: HasResult[T] => return f.result.matchWith(m)
+        case f: HasResult[_] => return f.asInstanceOf[HasResult[T]].result.matchWith(m)
         case t => throw t
       }
       result
@@ -336,7 +339,7 @@ trait OrResults {
  * This Exception is necessary to handle the "OR" case "value must be equalTo(bad) or be equalTo(good)"
  * where the first match is not ok.
  */
-case class FailureExceptionWithResult[T](m: String, result: Result[T]) extends FailureException(m) with HasResult[T]
+class FailureExceptionWithResult[T](m: String, @transient val result: Result[T]) extends FailureException(m) with HasResult[T]
 /** value returned by an expectable whose string representation can vary. */
 trait SuccessValue
 

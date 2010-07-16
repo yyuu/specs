@@ -14,14 +14,13 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.util
 import org.specs._
 import org.specs.runner._
 
 class scalaInterpreterSpec extends SpecificationWithJUnit with ScalaInterpreter {
-  detailedDiffs()
   "A Scala interpreter" should {
     "interpret a simple expression 1 + 1 to 2" in {
       interpret("1 + 1") must include("2")

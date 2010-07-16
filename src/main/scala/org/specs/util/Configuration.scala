@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.util
 import Classes._
@@ -39,6 +39,8 @@ trait Configuration extends ConfigurationFactory {
   def examplesWithoutExpectationsMustBePending = true
   /** this value controls if examples should be executed in a separate specification instance to avoid side effects */
   def oneSpecInstancePerExample = true
+  /** this value controls if string differences should be displayed as highlighted */
+  def smartDiffs = true
 }
 trait ConfigurationFactory extends FileSystem {
   /** @return the default configuration class */
@@ -74,6 +76,7 @@ trait ConfigurationFactory extends FileSystem {
         override def colorize = boolean(properties, "colorize", super.colorize)
         override def examplesWithoutExpectationsMustBePending = boolean(properties, "examplesWithoutExpectationsMustBePending", super.examplesWithoutExpectationsMustBePending)
         override def oneSpecInstancePerExample = boolean(properties, "oneSpecInstancePerExample", super.oneSpecInstancePerExample)
+        override def smartDiffs = boolean(properties, "smartDiffs", super.smartDiffs)
       })
     }
     catch {

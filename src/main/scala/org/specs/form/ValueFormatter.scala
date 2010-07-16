@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.form
 
@@ -24,7 +24,9 @@ package org.specs.form
 trait ValueFormatter[T] extends GenericFormatter {
   /** value formatter. By default formats Doubles with all decimals */
   private[form] var formatter = (t:Option[T]) => t match {
-    case Some(d: Double) => genericFormatter(new java.text.DecimalFormat("#.###############").format(d))
+    case Some(d: Double) => 
+      val df = new java.text.DecimalFormat("#.###############", java.text.DecimalFormatSymbols.getInstance(java.util.Locale.US))
+      genericFormatter(df.format(d))
     case Some(x: Any) => genericFormatter(x.toString)
     case None => ""
   }

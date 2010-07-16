@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.runner
 import org.specs._
@@ -81,8 +81,13 @@ class reporterSpecification extends TestSpecs {
     }
     "display the failure message next to the corresponding example" in {
       specWithTwoExamples(that.isKo, that.isOk) verifies(messages =>
-            messages.findIndexOf(matches("first failure")) ==
-            messages.findIndexOf(matches("example 2.1 ok")) + 1)
+            messages.indexWhere(matches("first failure")) ==
+            messages.indexWhere(matches("example 2.1 ok")) + 1)
+    }
+    "display nested examples in the right order" in {
+      specWithOneExampleAndTwoNestedExamples verifies(messages =>
+            messages.findIndexOf(matches("ex 1.1")) ==
+            messages.findIndexOf(matches("ex 1.2")) - 1)
     }
     "report the elapsed time" in {
       specWithOneExample(that.isOk) mustContainMatch "Finished in"
@@ -121,6 +126,9 @@ class reporterSpecification extends TestSpecs {
       new SpecWithAnEmptySus().run.toList must not containMatch("An empty system")
       new SpecWithAnEmptySus().run.toList must not containMatch("Total for SUS")
     }
+    "print only the high-level examples of an anonymous sus" in {
+	  new SpecWithAnAnonymousSystem(that.isOk).run.toList must not containMatch("specifies")
+	}
   }
 }
 class consoleTraitSpecification extends TestSpecs {
@@ -208,7 +216,7 @@ class consoleTraitSpecification extends TestSpecs {
 class TestSpecs extends org.specs.Specification {
   def specWithOneExample(expectations: (that.Value)*) = new SpecWithOneExample(expectations.toList).run
   def specWithTwoExamples(expectations: (that.Value)*) = new SpecWithTwoExamples(expectations.toList).run
-
+  def specWithOneExampleAndTwoNestedExamples = new SpecWithOneExampleAndTwoNestedExamples().run 
   def specTwoSystems = new Specification {
     "this is system one" should { "do nothing" in { 1 must_== 1 } }
     "this is system two" should { "do nothing" in { 1 must_== 1 } }
@@ -226,7 +234,7 @@ class specWithTags extends Specification {
 abstract class TestSpecification extends org.specs.Specification with Expectations with MockOutput {
   override val specs = List(this)
 }
-trait Expectations extends org.specs.Specification {
+trait Expectations  { this: org.specs.Specification =>
   val success = () => true mustBe true
   val isSkipped = () => skip("irrelevant")
   val isSkippedBecauseOfAFaultyMatcher = () => 1 must be(0).orSkipExample
@@ -234,6 +242,9 @@ trait Expectations extends org.specs.Specification {
   val failure2 = () => "ok" mustBe "second failure"
   val failMethod = () => fail("failure with the fail method")
   val exception= () => throw new Exception("new Error")
+  val exceptionWithACause = () => {
+    throw new Exception("new Error", new NullPointerException)
+  }
   def expectations(behaviours: List[that.Value]) = behaviours map {
                                     case that.isOk => success
                                     case that.isSkipped => isSkipped
@@ -242,6 +253,7 @@ trait Expectations extends org.specs.Specification {
                                     case that.isKoTwice => () => {failure1(); failure2()}
                                     case that.isKoWithTheFailMethod => failMethod
                                     case that.throwsAnException => exception
+                                    case that.throwsAnExceptionWithACause => exceptionWithACause 
   }
 }
 
@@ -259,8 +271,8 @@ class SpecWithOneExample(behaviours: List[(that.Value)]) extends TestSpecificati
 class SpecWithTwoExamples(behaviours: List[(that.Value)]) extends TestSpecification {
   def run = {
     "A specification" should {
-      "have example 2.1 ok" in { expectations(behaviours).head.apply}
-      "have example 2.2 ok" in { expectations(behaviours).last.apply }
+      "have example 2.1 ok".specifies { expectations(behaviours).head.apply; () }
+      "have example 2.2 ok".specifies { expectations(behaviours).last.apply; () }
     }
     reportSpecs
     messages
@@ -310,8 +322,19 @@ with MockOutput with Textile {
     messages
   }
 }
-
+class SpecWithOneExampleAndTwoNestedExamples extends Specification with MockOutput {
+  "this system" should {
+    "ex 1" in {
+      "ex 1.1" in { 1.isExpectation }
+      "ex 1.2" in { 1.isExpectation }
+    }
+  }
+  def run = {
+    reportSpecs
+    messages
+  }
+}
 object that extends Enumeration {
   val isKo, isOk, isKoTwice, isKoWithTheFailMethod,
-      throwsAnException, isSkipped, isSkippedBecauseOfAFaultyMatcher = Value
+      throwsAnException, throwsAnExceptionWithACause, isSkipped, isSkippedBecauseOfAFaultyMatcher = Value
 }

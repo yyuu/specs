@@ -14,15 +14,18 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.specification
 import org.specs.matcher.MatcherUtils._
 import org.specs.SpecUtils._
-import scala.reflect.Manifest
+import scala.reflect.ClassManifest
 import org.specs.execute._
 import org.specs.util._
+import org.specs.util.Control._
 import org.specs.util.ExtendedString._
+import org.specs.Specification
+import org.specs.util.ExtendedThrowable._
 /**
  * This class provides the base structure of a specification.<br>
  * A specification has a name, a description and is composed of:<ul>
@@ -53,7 +56,8 @@ import org.specs.util.ExtendedString._
  * </ul>
  */
 class BaseSpecification extends TreeNode with SpecificationSystems with SpecificationExecutor with ExampleExpectationsListener with Tagged 
-  with HasResults with LinkedSpecification with SpecificationConfiguration { outer =>
+  with HasResults with LinkedSpecification with SpecificationConfiguration 
+  with ComposedSpecifications with LazyParameters { outer =>
     
   /** name of the specification */
   var name = createDescription(getClass.getName)
@@ -86,31 +90,25 @@ class BaseSpecification extends TreeNode with SpecificationSystems with Specific
     parentSpecification.map(List(_)).getOrElse(Nil) ::: parentSpecification.map(_.parentSpecifications).getOrElse(Nil)   
   } 
   /** this declares that a specification is composed of other specifications */
-  def isSpecifiedBy(specifications: Specification*) = {
-    this.description = this.name + " is specified by"
+  def isSpecifiedBy(specifications: LazyParameter[Specification]*) = {
+    addToName(" is specified by")
     include(specifications:_*)
   }
   /** alias for isSpecifiedBy */
-  def areSpecifiedBy(specifications: Specification*) = {
-    this.description = this.name + " are specified by"
+  def areSpecifiedBy(specifications: LazyParameter[Specification]*) = {
+    addToName(" are specified by")
     include(specifications:_*)
+  }
+  private def addToName(s: String) {
+    this.description = this.name + s
   }
   /**
    * include a list of specifications inside this one
    */
-  def include(specifications: Specification*) = {
-    val toInclude = specifications.toList.filter((s: Specification) => !(s eq this) && !s.contains(this))
-    toInclude.foreach(_.setParent(this))
-    subSpecifications = subSpecifications ::: toInclude 
-  }
-  /**
-   * implicit definition allowing to declare a composition inside the current specification:
-   * <code>"A complex specification".isSpecifiedBy(spec1, spec2)</code>
-   * It changes the name of this specification with the parameter
-   */
-  implicit def declare(newName: String): BaseSpecification = { 
-    name = newName
-    this 
+  def include(specifications: LazyParameter[Specification]*) = {
+    val toInclude = specifications.toStream.filter((s: LazyParameter[Specification]) => !(s() eq this) && !s().contains(this)).
+                    map { s => s().setParent(this); s() }
+    subSpecifications = subSpecifications ++ toInclude 
   }
   /** @return recursively all the systems included in this specification */
   def allSystems: List[Sus] = {
@@ -127,7 +125,8 @@ class BaseSpecification extends TreeNode with SpecificationSystems with Specific
   /** @return the example corresponding to a given Tree path, searching in the incl */
   def getExample(path: TreePath): Option[Examples] = {
     path match {
-      case TreePath(0 :: i :: rest) if systems.size > i => systems(i).getExample(TreePath(rest))
+      case TreePath(0 :: i :: rest) if systems.size > i => 
+        systems(i).getExample(TreePath(rest))
       case _ => None
     }
   }
@@ -137,8 +136,18 @@ class BaseSpecification extends TreeNode with SpecificationSystems with Specific
    * Alternatively, it could be created with:
    * <code>forExample("return 0 when asked for (0+0)").in {...}</code>
    */
-  implicit def forExample(desc: String) = {
-    exampleContainer.createExample(desc)
+  implicit def specifyExample(desc: String): ExampleSpecification = {
+    val example = exampleContainer.createExample(desc)
+    if (sequential) example.setSequential()
+    new ExampleSpecification(example)
+  }
+  class ExampleSpecification(val example: Example) {
+    def specifies[T](expectations: =>T) = example.specifies(expectations)
+    def in[T](expectations: =>T)(implicit m: scala.reflect.ClassManifest[T]) = example.in(expectations)(m)
+    def >>[T](expectations: =>T)(implicit m: scala.reflect.ClassManifest[T]) = example.>>(expectations)(m)
+  }
+  def forExample(desc: String): Example = {
+    specifyExample(desc).example
   }
   /**
    * Create an anonymous example, giving it a number depending on the existing created examples/
@@ -171,35 +180,82 @@ class BaseSpecification extends TreeNode with SpecificationSystems with Specific
   var beforeSpec: Option[() => Any] = None
   /** the afterAllSystems function will be invoked after all systems */
   var afterSpec: Option[() => Any] = None
+  /** if this variable is true then the doBeforeSpec block is not executed */
+  private[specification] var beforeSpecHasBeenExecuted = false
+  /** if this variable is true then the doBeforeSpec block is not executed and the example execution must fail */
+  /** failure which may occur during the clean up of the spec */
+  private[specification] var beforeSpecFailure: Property[SpecFailureException] = Property()
+  /** failure which may occur during the clean up of the spec */
+  private[specification] var afterSpecFailure: Property[SpecFailureException] = Property()
+  /** if this variable is true then the doAfterSpec block is not executed */
+  private[specification] var afterSpecHasBeenExecuted = false
+  /** return true if no examples have been executed in this spec */
+  private[specification] def isBeforeAllExamples = !beforeSpecHasBeenExecuted
+  /** return true if this example is the last one of the spec */
+  private[specification] def isTheLastExample(ex: Examples): Boolean = (!ex.hasSubExamples || ex.exampleList.isEmpty)&& isTheLastExample(systems, ex)
+  
+  private def isTheLastExample(parents: List[Examples], ex: Examples): Boolean = {
+    !parents.isEmpty && 
+     // if the spec is sequential the last system will not be executed when its last example is executed
+     // however this is the right moment to execute the After block
+     (isSequential || parents.last.executed) && 
+    !parents.last.exampleList.isEmpty && 
+     (parents.last.exampleList.last == ex || isTheLastExample(parents.last.exampleList, ex))
+  }
   /**
    * override the beforeExample method to execute actions before the
    * first example of the first sus
    */
   override def beforeExample(ex: Examples) = {
-    super.beforeExample(ex)
-    if (!executeOneExampleOnly && 
-          !systems.isEmpty && 
-          !systems.first.exampleList.isEmpty && systems.first.exampleList.first == ex)
-      beforeSpec.map(_.apply)
+    beforeSpecFailure.foreach(throw _)
+    if (!executeOneExampleOnly && isBeforeAllExamples) {
+      executeSpecAction(beforeSpec, beforeSpecFailure, new BeforeSpecFailureException(_:FailureException))
+      beforeSpecHasBeenExecuted = true
+    }
   }
   /**
    * override the afterExample method to execute actions after the
    * last example of the last sus
    */
   override def afterExample(ex: Examples) = {
-    if (!executeOneExampleOnly && 
-        !systems.isEmpty && 
-         systems.last.executed && !systems.last.exampleList.isEmpty && 
-         systems.last.exampleList.last == ex)
-      afterSpec.map(_.apply)
+    afterSpecFailure.foreach(throw _)
     super.afterExample(ex)
+    if (beforeSpecHasBeenExecuted && !afterSpecHasBeenExecuted && isTheLastExample(ex)) {
+      afterSpecHasBeenExecuted = true
+      executeSpecAction(afterSpec, afterSpecFailure, new AfterSpecFailureException(_:FailureException))
+    }
+  }
+  /**
+   * execute the before or after specification action.
+   * 
+   * @param action the action to execute (possibly none)
+   * @param specFailure a Property storing the possible FailureException created during the execution of the action
+   *        this can happen if there are expectations in the action
+   * @exceptionWrapper wrapper to create a specific action type around the failure which occurred during the action
+   */
+  private[specification] def executeSpecAction(action: Option[() => Any], 
+                                               specFailure: Property[SpecFailureException],
+                                               exceptionWrapper: FailureException => SpecFailureException) {
+    
+    setTemporarily(isSequential, true, (b:Boolean) => setSequentialIs(b),
+                   executeOneExampleOnly, true, (b:Boolean) => executeOneExampleOnly = b,
+                   expectationsListener, new DefaultExampleExpectationsListener {}, (e:ExampleExpectationsListener) => expectationsListener = e) {
+      try {
+        action.map(_())
+      } catch {
+        case e: FailureException => specFailure(exceptionWrapper(e))
+        case other => throw other 
+      } finally {
+        specFailure.foreach(throw _)
+      }
+    }
   }
   /** 
    * this variable commands if the specification has been instantiated to execute one example only, 
    * in order to execute it in isolation 
    */
   private[specification] var executeOneExampleOnly = false
-    /**
+  /**
    * Syntactic sugar for examples sharing between systems under test.<p>
    * Usage: <code>
    *   "A stack below full capacity" should {
@@ -209,21 +265,41 @@ class BaseSpecification extends TreeNode with SpecificationSystems with Specific
    * In this example we suppose that there is a system under specification with the same name previously defined.
    * Otherwise, an Exception would be thrown, causing the specification failure at construction time.
    */
-  object behave {
-    def like(other: Sus): Example = {
+   object behave {
+    def like(o: =>Sus): Examples = {
+      val other = o
       val behaveLike: Example = forExample("behave like " + other.description.uncapitalize)
-      other.examples.foreach { o => 
-        val e = behaveLike.createExample(o.description.toString)
-        e.execution = o.execution
+      def originalExpectationsListener: Option[ExampleExpectationsListener] = other.parent match {
+        case Some(p: ExampleExpectationsListener) => Some(p)
+        case _ => None
+      }
+
+      behaveLike.in {
+        originalExpectationsListener.map(_.expectationsListener = outer)
+        other.prepareExecutionContextFrom(behaveLike)
+        other.execution.map(_.execute)
+        behaveLike.copyExecutionResults(other)
+        other.resetForExecution
+        other.exampleList = Nil
+        behaveLike
       }
       behaveLike
     }
-    def like(susName: String): Example = outer.systems.find(_.description == susName) match {
+    def like(susName: String): Examples = outer.systems.find(_.description == susName) match {
       case Some(sus) => this.like(sus)
       case None => throw new Exception(q(susName) + " is not specified in " + outer.name + 
                                          outer.systems.map(_.description).mkString(" (available sus are: ", ", ", ")"))
     }
   }
+  /** set an example as the current example for this lifecycle and its parent */
+  override private[specs] def setCurrent(ex: Option[Examples]): Unit = {
+    expectationsListener match {
+      case l: LifeCycle if (l != this) => l.setCurrent(ex)
+      case _ => ()
+    }
+    super.setCurrent(ex)
+  }
+
   /** @return the first level examples number (i.e. without subexamples) */
   def firstLevelExamplesNb: Int = subSpecifications.foldLeft(0)(_+_.firstLevelExamplesNb) + systems.foldLeft(0)(_+_.examples.size)
   /** @return the failures of each sus */
@@ -247,7 +323,30 @@ class BaseSpecification extends TreeNode with SpecificationSystems with Specific
     this
   }
   /** Declare the subspecifications and systems as components to be tagged when the specification is tagged */
-  override def taggedComponents: List[Tagged] = this.systems ++ this.subSpecifications 
+  override def taggedComponents: List[Tagged] = this.systems.toList ::: this.subSpecifications 
   /** @return the name of the specification */
   override def toString = name
+}
+trait ComposedSpecifications extends LazyParameters { this: BaseSpecification =>
+/**
+   * implicit definition allowing to declare a composition inside the current specification:
+   * <code>"A complex specification".isSpecifiedBy(spec1, spec2)</code>
+   * It changes the name of this specification with the parameter
+   */
+  implicit def declare(newName: String): ComposedSpecification = { 
+    name = newName
+    new ComposedSpecification(this) 
+  }
+  class ComposedSpecification(s: BaseSpecification) {
+    def isSpecifiedBy(specifications: LazyParameter[Specification]*) = s.isSpecifiedBy(specifications:_*)
+    def areSpecifiedBy(specifications: LazyParameter[Specification]*) = s.areSpecifiedBy(specifications:_*)
+    def include(specifications: LazyParameter[Specification]*) = s.include(specifications:_*)
+  }
+}
+abstract class SpecFailureException(message: String) extends FailureException(message)
+class BeforeSpecFailureException(e: FailureException) extends SpecFailureException("Before specification:\n" + e.getMessage) {
+  this.setAs(e)
+}
+class AfterSpecFailureException(e: FailureException) extends SpecFailureException("After specification:\n" + e.getMessage) {
+  this.setAs(e)
 }

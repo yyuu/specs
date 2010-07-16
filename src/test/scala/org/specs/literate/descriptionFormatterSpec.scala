@@ -14,13 +14,14 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.literate
 import scala.xml._
 import org.specs.Sugar._
 import org.specs.specification._
 import org.specs.runner._
+import org.specs._
 
 class descriptionFormatterSpec extends SpecificationWithJUnit {
 
@@ -33,7 +34,6 @@ class descriptionFormatterSpec extends SpecificationWithJUnit {
     "format a description as textile markup" in {
       textileFormatter.format(<t>h1. Hello world</t>) must \\("h1")
     }
-    detailedDiffs()
     "set the status of the example descriptions depending on the example status" in {
       val example = "example desc" in { 1 must_== 1 }
       example.executeThis

@@ -14,12 +14,13 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.literate
 import org.specs.form._
+import org.specs.HtmlSpecification
 
-class literateSpecUnit extends spex.Specification { outer =>
+class literateSpecUnit extends org.spex.Specification { outer =>
   "a literate spec can include forms with a report method" in {
     object l extends HtmlSpecification { 
       new Form {

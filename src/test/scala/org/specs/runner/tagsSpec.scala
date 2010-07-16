@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.runner
 import org.specs.literate._
@@ -66,7 +66,7 @@ class tagsSpec extends HtmlSpecificationWithJUnit with Fixtures {
 
 </t> isSus
 }
-trait Fixtures extends LiterateSpecification { this: LiterateSpecification =>
+trait Fixtures { this: LiterateSpecification =>
    object mySpec extends Specification with ScalaCheck {
      "example 1" in { 1 must_== 2 }
      "example 2" in {
@@ -77,7 +77,7 @@ trait Fixtures extends LiterateSpecification { this: LiterateSpecification =>
    def onlyTaggedExamples = eg {
      val acceptedExamples = mySpec.systems.flatMap(_.examples).filter(_.isAccepted)
      acceptedExamples.size must_== 1
-     acceptedExamples.first.description must_== "example 2"
+     acceptedExamples.head.description must_== "example 2"
    }
    object specWithSus extends Specification {
      "this sus" should {
@@ -86,7 +86,7 @@ trait Fixtures extends LiterateSpecification { this: LiterateSpecification =>
       } tag("be tagged")
     }
    def susExamplesAreNotTagged = eg {
-     specWithSus.systems.flatMap(_.examples).flatMap(_.tags) must beEmpty
+     specWithSus.systems.flatMap(_.examples).flatMap(_.tagNames) must beEmpty
    }
    import org.specs.io.mock.MockOutput
    def specOutput = {

@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.matcher
 import java.util.regex._
@@ -40,10 +40,10 @@ object MatcherUtils {
   /**
    * @return an object.toString() between quotes (used in messages creation)
    */
-  def q(a: Any)  = if (a == null) "'null'" else ("'" + a.toString + "'")
+  def q(a: Any)  = if (null == a) "'null'" else ("'" + a.toString + "'")
   
   /**
    * @return an object.toString() without quotes (used in messages creation)
    */
-  def unq(a: Any)  = if (a == null) "null" else a.toString
+  def unq(a: Any)  = if (null == a) "null" else a.toString
 }

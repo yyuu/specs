@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs
 
@@ -23,9 +23,10 @@ import org.specs.matcher._
 import org.specs.Sugar._
 import org.specs.runner._
 import org.specs.util._
-import org.specs.ExtendedThrowable._
+import org.specs.util.ExtendedThrowable._
 import scala.collection.mutable._
-import scalacheck.Gen._
+import org.scalacheck.Gen
+import org.scalacheck.Gen._
 import org.specs.matcher.MatcherUtils._
 
 class specificationsUnit extends SpecificationWithJUnit with ScalaCheck {
@@ -33,9 +34,9 @@ class specificationsUnit extends SpecificationWithJUnit with ScalaCheck {
   "A specification" should {
     "have a description corresponding to its unqualified class name, whatever the class name" in {
       def classNames = for {
-        packageName <- elements("com", "scala")
-        className <- elements(packageName + "s", packageName + ".specs", packageName + ".other.normal")
-        name <- elements(className, className + "$inner", className + "$inner$", className + "$2", className + "$2$")
+        packageName <- Gen.oneOf("com", "scala")
+        className <- Gen.oneOf(packageName + "s", packageName + ".specs", packageName + ".other.normal")
+        name <- Gen.oneOf(className, className + "$inner", className + "$inner$", className + "$2", className + "$2$")
       } yield name
 
       classNames must pass { name : String =>
@@ -63,14 +64,14 @@ class specificationsUnit extends SpecificationWithJUnit with ScalaCheck {
       nudeSpecification.systems.head.examples.size mustBe 1
     }
     "create a default example named 'example 1'" in {
-      nudeSpecification.systems.head.examples.first.description must_== "example 1"
+      nudeSpecification.systems.head.examples.head.description must_== "example 1"
     }
     "count 1 expectation" in {
       nudeSpecification.expectationsNb mustBe 1
     }
   }
   "the location of a failure" should {
-    val startLine = 105
+    val startLine = 106
     "indicate the precise location if it is an anonymous example" in {
       anonymousSpecification.failures(0).location must_== "specificationsUnit.scala:" + startLine
     }

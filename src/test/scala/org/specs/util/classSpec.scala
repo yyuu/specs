@@ -14,19 +14,19 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.util
 import org.specs.util.Classes._
 import org.specs.specification.BaseSpecification
 
-class classSpec extends spex.Specification {
-  "the class name of a full name with package should only return the last name" in {
-    className("org.specs.MyName") must_== "MyName"
+class classSpec extends org.spex.Specification {
+  "the class name of name should decode the name" in {
+    className("$plus$plus") must_== "++"
   }
   "the class name of an internal class should only return the last name" in {
     class ThisClassName
-    className(classOf[ThisClassName].getName) must_== "ThisClassName"
+    className(classOf[ThisClassName].getSimpleName) must_== "ThisClassName"
   }
   "the class name of an Int should be Integer" in {
     getClassName(1) must_== "Integer"
@@ -34,9 +34,17 @@ class classSpec extends spex.Specification {
   "the class name of a String should be String" in {
     getClassName("1") must_== "String"
   }
+  "create object" should {
+    "return an instance if the instance can be created" in {
+      create[String]("java.lang.String") must be right(new String)
+    }
+    "return an exception if the class can't be loaded" in {
+      create[String]("missing") must beLeft("java.lang.ClassNotFoundException: missing") ^^ (_.left.map(_.toString))
+    }
+  }
   "A tryToCreateObject function" should {
     "try to create an instance using the first available constructor" in {
-      class spec extends spex.Specification
+      class spec extends org.spex.Specification
       val s = new spec
       tryToCreateObject[BaseSpecification](s.getClass.getName, true, true) must not be none
     }

@@ -1,21 +1,43 @@
+/**
+ * Copyright (c) 2007-2009 Eric Torreborre <etorreborre@yahoo.com>
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+ * and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+ * the Software. Neither the name of specs nor the names of its contributors may be used to endorse or promote
+ * products derived from this software without specific prior written permission.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+ * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+ * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
 package org.specs.specification
 
-class executionSpec extends spex.Specification {
-  include(new execution1, new execution2, new execution3)
+class executionSpec extends org.spex.Specification {
+  include(new execution0, new execution1, new execution2, new execution3)
 }
-class execution0 extends spex.Specification {
+class execution0 extends org.spex.Specification {
   var x = 1
   "A sus" should {
     "execute the first example with local variables" in { x must_== 1; x = x + 1 }
     "execute the second example with a reinitialized variable" in { x must_== 1; x = x + 1 }
   }
 }
-class execution1 extends spex.Specification {
+class execution1 extends org.spex.Specification {
   var x = 1
   "A sus" should {
     x = x + 1
-    "execute the first example with local variables" in { x must_== 2; x = x + 1 }
-    "execute the second example with a reinitialized variable" in { x must_== 2; x = x + 1 }
+    "execute the first example with local variables" in { 
+      x aka "ex1" must_== 2; 
+      x = x + 1 }
+    "execute the second example with a reinitialized variable" in { 
+      x aka "ex2" must_== 2; 
+      x = x + 1 }  
   }
   "Another sus " should {
     x = x + 1
@@ -23,7 +45,7 @@ class execution1 extends spex.Specification {
     "2 - execute the second example with a reinitialized variable" in { x must_== 2; x = x + 1 }
   }
 }
-class execution2 extends spex.Specification {
+class execution2 extends org.spex.Specification {
   "A sus" should {
     var x = 1
     def inc() = {
@@ -36,7 +58,7 @@ class execution2 extends spex.Specification {
     }
   }
 }
-class execution3 extends spex.Specification {
+class execution3 extends org.spex.Specification {
   "A sus" should {
     var x = 1
     "execute the first example with local variables" in { 
@@ -51,7 +73,7 @@ class execution3 extends spex.Specification {
     }
   }
 }
-class execution4 extends spex.Specification {
+class execution4 extends org.spex.Specification {
   var x = 1
   "A sus" should {
     "execute the first example with local variables" in {  
@@ -72,7 +94,7 @@ class execution4 extends spex.Specification {
     }
   }
 }
-class execution5 extends spex.Specification {
+class execution5 extends org.spex.Specification {
   var desc = "2 systems with the same name but different examples"
   var x = 1
   "A sus" should {

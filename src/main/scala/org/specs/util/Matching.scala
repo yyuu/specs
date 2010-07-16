@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.util
 import scala.Math._
@@ -54,7 +54,7 @@ trait Matching {
         existingEdges((a, b))
       else {
         val newEdge = edgeFunction(a, b)
-        existingEdges = existingEdges.update((a, b), newEdge)
+        existingEdges = existingEdges.updated((a, b), newEdge)
         newEdge
       }
     }

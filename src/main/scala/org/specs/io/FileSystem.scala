@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.io;
 import java.io._
@@ -279,7 +279,12 @@ trait FileSystem extends FileReader with FileWriter {
    * @return a list of URL
    */
   def getResourcesNamed(name: String): List[URL] = {
-    ClassLoader.getSystemResource(name) :: this.getClass.getClassLoader.getResources(name)
+    val resource = ClassLoader.getSystemResource(name)
+    val resources = this.getClass.getClassLoader.getResources(name)
+    if (resource != null)
+      resource :: resources
+    else
+      resources
   }
 
 }

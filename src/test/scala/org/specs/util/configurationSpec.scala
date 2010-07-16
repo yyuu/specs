@@ -14,12 +14,12 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.util
 import org.specs.io.mock._
 
-class configurationSpec extends spex.Specification {
+class configurationSpec extends org.spex.Specification {
   "A configuration object" should {
     "try to find the default configuration class, named DefaultConfiguration, in the default package" in {
       Configuration.getDefaultConfiguration must haveClass[DefaultConfiguration]
@@ -32,7 +32,7 @@ class configurationSpec extends spex.Specification {
     "then defaulting to the DefaultConfiguration if the user config is not found"  in {
       Configuration.getConfiguration("missing") must haveClass[DefaultConfiguration]
     }
-    "try to find a configuration class, with a given name defaulting to the user configuration" in {
+    "try to find a configuration class, with a given class name defaulting to the user configuration" in {
       Configuration.getConfiguration("org.specs.util.TestConfiguration") must haveClass[TestConfiguration]
     }
     "try to find a configuration properties file and load the properties from there" in {
@@ -43,12 +43,13 @@ statistics = false
 finalStatisticsOnly = true
 colorize = true
 examplesWithoutExpectationsMustBePending = false
-oneSpecInstancePerExample = false
+oneSpecInstancePerExample = true
+smartDiffs = false
 """
       configuration.addFile("configuration.properties", props)
       val c = configuration.getConfiguration("configuration.properties")
-      (c.stacktrace, c.statistics, c.examplesWithoutExpectationsMustBePending, c.oneSpecInstancePerExample).foreach(_ must beFalse)
-      (c.failedAndErrorsOnly, c.finalStatisticsOnly, c.colorize).foreach(_ must beTrue)
+      (c.stacktrace, c.statistics, c.examplesWithoutExpectationsMustBePending, c.smartDiffs).foreach(_ must beFalse)
+      (c.failedAndErrorsOnly, c.finalStatisticsOnly, c.colorize, c.oneSpecInstancePerExample).foreach(_ must beTrue)
     }
   }
   "A configuration" can {

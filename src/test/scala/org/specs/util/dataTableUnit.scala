@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.util
 import org.specs._
@@ -79,7 +79,7 @@ class dataTableUnit extends SpecificationWithJUnit with DataTables {
     "provide the results of the execution of a function over all rows, showing failures if the function throws an exception" in {
        val datatable =  "a"|"b"|"c"|
                          1 ! 2 ! 4 |
-                         1 ! 2 ! 3 |{(a: Int, b: Int, c: Int) => a+b must_== c}
+                         1 ! 2 ! 3 |{(a, b, c) => a+b must_== c}
        try { datatable.execute }
        catch { case _ => true }
 
@@ -147,6 +147,32 @@ class dataTableUnit extends SpecificationWithJUnit with DataTables {
          <tr class="failure"><td>1</td><td>2</td><td>4</td><td>'3' is not equal to '4'</td></tr>
          <tr class="success"><td>2</td><td>2</td><td>4</td><td/></tr>
        </table>)
+    }
+    "allow a context to be used around rows" in {
+       var v = 1
+       beforeContext(v = 0)|
+       "a"|"b"|"c"|  
+        2 ! 2 ! 4 | 
+        1 ! 2 ! 3 |> { (a, b, c) =>
+         v must_== 0
+         v = 1
+        } 
+    }
+  }
+  "A datatable" can {
+    "have a context associated to its header" in {
+      val h = "a"|"b"|"c"|(beforeContext())
+      h.context must beSome
+      (h|1!2!3).header.context must beSome
+    }
+    "use the associated context when executing the table" in {
+      var d = 1
+      "a"|"b"|"c"| beforeContext(d = 0) |
+       1 ! 2 ! 3 |
+       2 ! 2 ! 4 |> { (a, b, c) => 
+         d must_== 0
+         (a+b) must_== c
+       }
     }
   }
 }

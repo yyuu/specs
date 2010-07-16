@@ -19,6 +19,7 @@
 package org.specs.literate
 import org.specs.specification._
 import org.specs.execute._
+import org.specs._
 /**
  * This trait adds shortcut methods to define expectations, to silence expressions
  */
@@ -41,7 +42,7 @@ trait LiterateShortcuts extends BaseSpecification with ExpectableFactory with Fa
    * Create an anonymous example with a function on a System,
    * giving it a number depending on the existing created examples
    */
-  def eg[S](function: S => Any): Unit = (forExample in function).shh
+  def eg[S](function: S => Any): Unit = (forExample.specifyExample(function)).shh
 
   /** embeddeds a test into a new example and silence the result */
   def eg(test: =>Any): Unit = (forExample in test).shh

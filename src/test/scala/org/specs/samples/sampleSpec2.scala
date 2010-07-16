@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.samples
 import org.specs._
@@ -22,7 +22,7 @@ import org.specs.specification._
 import org.specs.Sugar._
 import org.specs.runner._
 
-object sampleSpec2 extends Specification {
+object sampleSpecification2 extends Specification {
   "A sample specification2" should {
     "return something" in {
        "hello" mustBe "hello"
@@ -31,7 +31,7 @@ object sampleSpec2 extends Specification {
 }
 
 
-object allSpecififcation extends Specification {
+object allSpecification extends Specification {
   def length11(s: String) = new Specification(s) {
     s should {
       "have 11 characters" in {

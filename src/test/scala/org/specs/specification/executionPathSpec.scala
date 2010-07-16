@@ -14,12 +14,13 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.specification
-import org.specs.util._
+import org.specs.util.{ TreeNode, TreePath, Classes }
+import org.specs._
 
-class executionPathSpec extends spex.Specification with Classes {
+class executionPathSpec extends org.spex.Specification with Classes {
   shareVariables()
   val spec = new Specification {
     "this system" should {

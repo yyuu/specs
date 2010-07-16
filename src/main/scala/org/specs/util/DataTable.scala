@@ -14,10 +14,10 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.util
-import org.specs.Products._
+import Products._
 import scala._
 import org.specs.specification._
 import scala.xml.NodeSeq
@@ -31,6 +31,10 @@ trait DataTables {
    * @return a table header which first column is the string <code>a</code>
    */
   implicit def toTableHeader(a: String) = new TableHeader(List(a))
+  /**
+   * @return a table header with a context
+   */
+  implicit def toTableHeaderWithContext(c: Context) = new TableHeader(c)
 
   /**
    * @return a table row whose type will be <code>T</code> for each element and
@@ -47,12 +51,13 @@ trait DataTables {
  * A header can be closed using the | method which will return the TableHeader object<p>
  * A header can be followed by data rows which only requirement is to have a <code>def header_=(t: TableHeader)</code> function
  */
-case class TableHeader(var titles: List[String], var isOk: Boolean) {
+case class TableHeader(var titles: List[String], var isOk: Boolean, var context: Option[Context]) {
+  /** Default constructor. */
+  def this(titles: List[String]) = this(titles, true, None)
+  /** constructor with a context. */
+  def this(c: Context) = this(Nil, true, Some(c))
   /** Mutator to indicate a failure in the rest of the table. */
   def setFailed() = isOk = false
-
-  /** Default constructor. */
-  def this(titles: List[String]) = this(titles, true)
   /**
    * Adds a new column to the header
    * @returns the extended header
@@ -60,23 +65,32 @@ case class TableHeader(var titles: List[String], var isOk: Boolean) {
   def |(s: String) = { titles = titles ::: List(s); this }
 
   /**
-  * Used to close the header
-  * @returns the header
-  */
+   * Used to close the header
+   * @returns the header
+   */
   def | = this
+
+  /**
+   * Used to close the header and set a context
+   * @returns the header
+   */
+  def |(c: Context) = {
+    context = Some(c)
+    this
+  }
 
   /**
    * Accepts any object on which a header can be set. Sets the header on that object and returns it
    * @returns the header-accepting object (usually a DataRow object)
    */
-  def |[T <: Any {def header_=(t: TableHeader)}](d: T) = { d.header_=(this); d }
+  def |[T <: ExecutableHeader](d: T) = { d.header_=(this); d }
 
   /**
    * Accepts any object on which a header can be set and which is executable.
    * Sets the header on the object, marks it as "should be executed" and returns it.
    * @returns the header-accepting object (usually a DataRow object), ready to execute
    */
-  def |>[T <: Any {def header_=(t: TableHeader); def shouldExecute_=(b: Boolean)}](d: T) = { d.header_=(this); d.shouldExecute_=(true); d }
+  def |>[T <: ExecutableHeader](d: T) = { d.header_=(this); d.shouldExecute_=(true); d }
 
   /**
    * @returns the header as string: |"a" | "b" | "c = a + b"|
@@ -113,12 +127,18 @@ case class TableHeader(var titles: List[String], var isOk: Boolean) {
      this
    }
 }
-
+/**
+ * Helper trait to support the passing of a header from row to row
+ */
+private[util] trait ExecutableHeader {
+  def header_=(t: TableHeader)
+  def shouldExecute_=(b: Boolean)
+}
 /**
  * Abstract representation of a row without the column types.
  */
-trait AbstractDataRow extends DefaultResults {
-  var header: TableHeader = new TableHeader(Nil, true)
+trait AbstractDataRow extends DefaultResults with ExecutableHeader {
+  var header: TableHeader = new TableHeader(Nil, true, None)
   var shouldExecute = false;
   def valuesList: List[Any]
 }
@@ -142,26 +162,26 @@ abstract class DataRow[+T0, +T1, +T2, +T3, +T4, +T5, +T6, +T7, +T8, +T9, +T10,
                                                                     table: DataTable[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, S16, S17, S18, S19],
                                                                       execute: Boolean) = {
     row match {
-      case DataRow1(f: Function1[S0, _]) => table.function = () => { f(values._1); table }; if (execute) table.execute
-      case DataRow1(f: Function2[S0, S1, _]) => table.function = () => { f(values._1, values._2); table }; if (execute) table.execute
-      case DataRow1(f: Function3[S0, S1, S2, _]) => table.function = () => { f(values._1, values._2, values._3); table }; if (execute) table.execute
-      case DataRow1(f: Function4[S0, S1, S2, S3, _]) => table.function = () => { f(values._1, values._2, values._3, values._4); table }; if (execute) table.execute
-      case DataRow1(f: Function5[S0, S1, S2, S3, S4, _]) => table.function = () => { f(values._1, values._2, values._3, values._4, values._5); table }; if (execute) table.execute
-      case DataRow1(f: Function6[S0, S1, S2, S3, S4, S5, _]) => table.function = () => { f(values._1, values._2, values._3, values._4, values._5, values._6); table }; if (execute) table.execute
-      case DataRow1(f: Function7[S0, S1, S2, S3, S4, S5, S6, _]) => table.function = () => { f(values._1, values._2, values._3, values._4, values._5, values._6, values._7); table }; if (execute) table.execute
-      case DataRow1(f: Function8[S0, S1, S2, S3, S4, S5, S6, S7, _]) => table.function = () => { f(values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8); table }; if (execute) table.execute
-      case DataRow1(f: Function9[S0, S1, S2, S3, S4, S5, S6, S7, S8, _]) => table.function = () => { f(values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9); table }; if (execute) table.execute
-      case DataRow1(f: Function10[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, _]) => table.function = () => { f(values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10); table }; if (execute) table.execute
-      case DataRow1(f: Function11[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, _]) => table.function = () => { f(values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10, values._11); table }; if (execute) table.execute
-      case DataRow1(f: Function12[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, _]) => table.function = () => { f(values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10, values._11, values._12); table }; if (execute) table.execute
-      case DataRow1(f: Function13[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, _]) => table.function = () => { f(values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10, values._11, values._12, values._13); table }; if (execute) table.execute
-      case DataRow1(f: Function14[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, _]) => table.function = () => { f(values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10, values._11, values._12, values._13, values._14); table }; if (execute) table.execute
-      case DataRow1(f: Function15[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, _]) => table.function = () => { f(values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10, values._11, values._12, values._13, values._14, values._15); table }; if (execute) table.execute
-      case DataRow1(f: Function16[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, _]) => table.function = () => { f(values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10, values._11, values._12, values._13, values._14, values._15, values._16); table }; if (execute) table.execute
-      case DataRow1(f: Function17[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, S16, _]) => table.function = () => { f(values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10, values._11, values._12, values._13, values._14, values._15, values._16, values._17); table }; if (execute) table.execute
-      case DataRow1(f: Function18[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, S16, S17, _]) => table.function = () => { f(values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10, values._11, values._12, values._13, values._14, values._15, values._16, values._17, values._18); table }; if (execute) table.execute
-      case DataRow1(f: Function19[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, S16, S17, S18, _]) => table.function = () => { f(values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10, values._11, values._12, values._13, values._14, values._15, values._16, values._17, values._18, values._19); table }; if (execute) table.execute
-      case DataRow1(f: Function20[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, S16, S17, S18, S19, _]) => table.function = () => { f(values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10, values._11, values._12, values._13, values._14, values._15, values._16, values._17, values._18, values._19, values._20); table }; if (execute) table.execute
+      case DataRow1(f: Function1[_, _]) => table.function = () => { f.asInstanceOf[Function1[S0, _]](values._1); table }; if (execute) table.execute
+      case DataRow1(f: Function2[_, _, _]) => table.function = () => { f.asInstanceOf[Function2[S0, S1, _]](values._1, values._2); table }; if (execute) table.execute
+      case DataRow1(f: Function3[_, _, _, _]) => table.function = () => { f.asInstanceOf[Function3[S0, S1, S2, _]](values._1, values._2, values._3); table }; if (execute) table.execute
+      case DataRow1(f: Function4[_, _, _, _, _]) => table.function = () => { f.asInstanceOf[Function4[S0, S1, S2, S3, _]](values._1, values._2, values._3, values._4); table }; if (execute) table.execute
+      case DataRow1(f: Function5[_, _, _, _, _, _]) => table.function = () => { f.asInstanceOf[Function5[S0, S1, S2, S3, S4, _]](values._1, values._2, values._3, values._4, values._5); table }; if (execute) table.execute
+      case DataRow1(f: Function6[_, _, _, _, _, _, _]) => table.function = () => { f.asInstanceOf[Function6[S0, S1, S2, S3, S4, S5, _]](values._1, values._2, values._3, values._4, values._5, values._6); table }; if (execute) table.execute
+      case DataRow1(f: Function7[_, _, _, _, _, _, _, _]) => table.function = () => { f.asInstanceOf[Function7[S0, S1, S2, S3, S4, S5, S6, _]](values._1, values._2, values._3, values._4, values._5, values._6, values._7); table }; if (execute) table.execute
+      case DataRow1(f: Function8[_, _, _, _, _, _, _, _, _]) => table.function = () => { f.asInstanceOf[Function8[S0, S1, S2, S3, S4, S5, S6, S7, _]](values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8); table }; if (execute) table.execute
+      case DataRow1(f: Function9[_, _, _, _, _, _, _, _, _, _]) => table.function = () => { f.asInstanceOf[Function9[S0, S1, S2, S3, S4, S5, S6, S7, S8, _]](values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9); table }; if (execute) table.execute
+      case DataRow1(f: Function10[_, _, _, _, _, _, _, _, _, _, _]) => table.function = () => { f.asInstanceOf[Function10[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, _]](values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10); table }; if (execute) table.execute
+      case DataRow1(f: Function11[_, _, _, _, _, _, _, _, _, _, _, _]) => table.function = () => { f.asInstanceOf[Function11[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, _]](values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10, values._11); table }; if (execute) table.execute
+      case DataRow1(f: Function12[_, _, _, _, _, _, _, _, _, _, _, _, _]) => table.function = () => { f.asInstanceOf[Function12[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, _]](values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10, values._11, values._12); table }; if (execute) table.execute
+      case DataRow1(f: Function13[_, _, _, _, _, _, _, _, _, _, _, _, _, _]) => table.function = () => { f.asInstanceOf[Function13[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, _]](values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10, values._11, values._12, values._13); table }; if (execute) table.execute
+      case DataRow1(f: Function14[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _]) => table.function = () => { f.asInstanceOf[Function14[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, _]](values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10, values._11, values._12, values._13, values._14); table }; if (execute) table.execute
+      case DataRow1(f: Function15[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]) => table.function = () => { f.asInstanceOf[Function15[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, _]](values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10, values._11, values._12, values._13, values._14, values._15); table }; if (execute) table.execute
+      case DataRow1(f: Function16[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]) => table.function = () => { f.asInstanceOf[Function16[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, _]](values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10, values._11, values._12, values._13, values._14, values._15, values._16); table }; if (execute) table.execute
+      case DataRow1(f: Function17[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]) => table.function = () => { f.asInstanceOf[Function17[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, S16, _]](values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10, values._11, values._12, values._13, values._14, values._15, values._16, values._17); table }; if (execute) table.execute
+      case DataRow1(f: Function18[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]) => table.function = () => { f.asInstanceOf[Function18[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, S16, S17, _]](values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10, values._11, values._12, values._13, values._14, values._15, values._16, values._17, values._18); table }; if (execute) table.execute
+      case DataRow1(f: Function19[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]) => table.function = () => { f.asInstanceOf[Function19[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, S16, S17, S18, _]](values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10, values._11, values._12, values._13, values._14, values._15, values._16, values._17, values._18, values._19); table }; if (execute) table.execute
+      case DataRow1(f: Function20[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]) => table.function = () => { f.asInstanceOf[Function20[S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, S16, S17, S18, S19, _]](values._1, values._2, values._3, values._4, values._5, values._6, values._7, values._8, values._9, values._10, values._11, values._12, values._13, values._14, values._15, values._16, values._17, values._18, values._19, values._20); table }; if (execute) table.execute
       case _ => if (!execute) table.rows = List(this, {row.header_=(header); row}); table
     }
     table
@@ -207,6 +227,11 @@ trait ExecutableDataTable extends HasResults {
   def skipped: Seq[SkippedException] = rows.flatMap(_.skipped)
   def reset() = { rows.foreach { r => r.reset() }}
   def whenFailing(f: ExecutableDataTable => Unit): this.type
+  var context : Option[Context] = None
+  def contextIs(c: Context) = {
+    context = Some(c)
+    this
+  }
 }
 
 /**
@@ -278,7 +303,11 @@ case class DataTable[T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13,
   /**
    * executes the function on each table row if the function exists
    */
-  def execute: this.type = execute { if (function != null) { function() } }
+  def execute: this.type = execute { 
+    if (function != null) { 
+      function() 
+    } 
+  }
   def execute(f: =>Any): this.type = {
     reset()
     f
@@ -313,13 +342,19 @@ case class DataTable[T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13,
    */
   private def executeRow(row: AbstractDataRow, value: => Any) = {
     try {
-      value
+      header.context.map(_.beforeActions())
+      header.context match {
+        case Some(c) => c.aroundExpectationsActions(value)
+        case None => value
+      }
     }
     catch {
       case f: FailureException => row.addFailure(f)
       case s: SkippedException => row.addSkipped(s)
       case e: Throwable => { e.printStackTrace; row.addError(e) }
-    }
+    } finally {
+      header.context.map(_.afterActions())
+    } 
   }
   /**
    * apply a function of one argument to the table and set the table for execution
@@ -512,4 +547,4 @@ case class DataRow20[T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13,
 /**
  * Extension of a FailureException to allow a better display of this kind of failure (used in HtmlRunner)
  */
-case class DataTableFailureException(val table: ExecutableDataTable) extends FailureException(table.results)
+class DataTableFailureException(val table: ExecutableDataTable) extends FailureException(table.results)

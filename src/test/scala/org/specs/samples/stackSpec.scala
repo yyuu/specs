@@ -14,15 +14,20 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.samples
 import org.specs.runner._
 import org.scalacheck.Commands
 import org.specs.util._
+import org.specs._
 
 class stackSpec extends StackSpecification {
   var stack = emptyStack 
+  val nonEmptyStack = beforeContext(stack = nonEmpty)
+  val belowCapacityStack = beforeContext(stack = belowCapacity)
+  val fullStack = beforeContext(stack = full)
+  
   "An empty stack" should {
     "throw an exception when sent #top" in { 
       stack.top must throwA[NoSuchElementException]
@@ -31,8 +36,7 @@ class stackSpec extends StackSpecification {
       stack.pop must throwA[NoSuchElementException]
     }
   }
-  "A non-empty stack below full capacity" should {
-    doBefore(stack = nonEmpty)
+  "A non-empty stack below full capacity" ->-(nonEmptyStack) should {
     "not be empty" in { 
       stack verifies (!_.isEmpty)
     }
@@ -52,16 +56,14 @@ class stackSpec extends StackSpecification {
         stack.top mustNotBe stack.lastItemAdded
     }
   }
-  "A stack below full capacity" should {
-    doBefore(stack = belowCapacity)
+  "A stack below full capacity"->-(belowCapacityStack) should {
     behave like "A non-empty stack below full capacity"
     "add to the top when sent #push" in { 
       stack push 3
       stack.top mustBe 3
     }
   }
-  "A full stack" should {
-    doBefore(stack = full)
+  "A full stack"->-(fullStack) should {
     behave like "A non-empty stack below full capacity"
     "throw an exception when sent #push" in {
       stack.push(11) must throwAn[Error]
@@ -73,7 +75,7 @@ class StackSpecification extends SpecificationWithJUnit {
   case class SampleStack(name: String, stackCapacity: Int, itemsNb: Int) extends LimitedStack[Int](stackCapacity) {
     def this(name: String, capacity: Int) = this(name, capacity, 0)
     var lastItemAdded = 0
-    for (i <- 1 to itemsNb) { this += i; lastItemAdded = i }
+    for (i <- 1 to itemsNb) { super.push(i); lastItemAdded = i }
     override def toString = name
   }
   def emptyStack = new SampleStack("empty stack", 10)
@@ -83,7 +85,7 @@ class StackSpecification extends SpecificationWithJUnit {
 }
 
 class LimitedStack[T](val capacity: Int) extends scala.collection.mutable.Stack[T] {
-  override def push(a: T*) = {
-    if (size >= capacity) throw new Error("full stack") else this ++= a
+  override def push(a: T) = {
+    if (size >= capacity) throw new Error("full stack") else super.push(a)
   }
 }

@@ -14,13 +14,12 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.form
 
-import matcher.{HaveTheSameElementsAs, BeEqualTo, Matcher, Matchers}
+import org.specs.matcher.{HaveTheSameElementsAs, BeEqualTo, Matcher, Matchers}
 import scala.xml._
-import scala.collection.mutable._
 import scala.collection.mutable.ListBuffer
 import org.specs.xml.NodeFunctions._
 import org.specs.execute._
@@ -112,11 +111,17 @@ trait FormEnabled extends DefaultExecutable with LabeledXhtml with Layoutable wi
   /**
    * add a Prop to the Form.
    */
-  def add(p: FormProperty with Copyable[FormProperty]): this.type = { properties.append(p); this }
+  def add(p: FormProperty with Copyable[FormProperty]*): this.type = { 
+    p.foreach(properties.append(_)) 
+    this 
+  }
   /**
    * add a Field to the Form.
    */
-  def add[T](p: Field[T]): this.type = { fields.append(p); this }
+  def add[T](p: Field[T]): this.type = { 
+    fields.append(p) 
+    this 
+  }
   /**
    * this allows to set properties on this Form with:
    * myForm.set { f =>
@@ -242,6 +247,15 @@ trait FormEnabled extends DefaultExecutable with LabeledXhtml with Layoutable wi
     resetIncludeExclude()
     this
   }
+  /** reset all, properties, execution, layout. */
+  def resetAll(): this.type = {
+    resetLayout()
+    reset()
+    properties.clear
+    fields.clear
+    this
+  }
+
   /** reset the execution of the Form. */
   def resetExecution() = {
     properties.foreach(_.reset())

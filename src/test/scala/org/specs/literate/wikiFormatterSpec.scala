@@ -14,14 +14,14 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.literate
 import org.specs._
 import org.specs.specification._
 import scala.xml._
 
-class wikiFormatterSpec extends spex.Specification {
+class wikiFormatterSpec extends org.spex.Specification {
   "A wiki formatter" should {
     def formatString(s: String): String = new WikiFormatter(){}.format(s)
     def formatElem(e: Elem): Node = new TextileFormatter(){}.format(e)
@@ -44,7 +44,7 @@ class wikiFormatterSpec extends spex.Specification {
   }
   "A wiki formatter setStatus function" should {
     val exampleDesc = "a description"
-    val example = "a description" in (1 must_== 1)
+    val example = "a description" in { 1 must_== 1 }
     val descWithStatus = new WikiFormatter(){}.setStatus(exampleDesc, List(example))
 
     "set the example status as an xml attribute" in {

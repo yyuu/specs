@@ -14,11 +14,11 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.form
 
-class DataTableBagForm[T](title: Option[String], bag: Seq[T]) extends BagForm[T](bag) with DataTableFormEnabled {
+class DataTableBagForm[T](title: Option[String], bag: Seq[T]) extends BagForm[T](title, bag) with DataTableFormEnabled {
   def this(title: String, bag: Seq[T]) = this(Some(title), bag)
   override def setHeader[F <: LineForm](line: F): F = super[DataTableFormEnabled].setHeader(line)
   

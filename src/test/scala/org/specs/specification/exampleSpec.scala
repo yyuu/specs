@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.specification
 import org.specs._
@@ -24,6 +24,17 @@ import org.specs.util._
 
 class exampleSpec extends SpecificationWithJUnit {
   "An example" should {
+    "know if it has subexamples without executing them" in {
+      object s extends Specification {
+        "e" in {
+          "e1" in { 
+            "e2" in { 1.isExpectation } 
+          }
+        }
+      }
+      s.examples(0) aka "first example" must beTrue ^^ { e  => e.hasSubExamples }
+      s.examples(0).examples(0) aka "first nested example" must beTrue ^^ { e  => e.hasSubExamples }
+    }
     "not be executed if not asked for results" in {
       ex.hasBeenExecuted must beFalse
     }

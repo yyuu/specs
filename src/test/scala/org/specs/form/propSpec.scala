@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.form
 import org.specs._
@@ -40,7 +40,7 @@ class propSpec extends SpecificationWithJUnit with Mockito with Sugar with DataT
                                                           
       "evaluate the constraint when a "+label+" property is executed" in {  
         Prop(label, 1, constraint)(2).execute
-        constraint.execute(Some(2)) was called
+        there was one(constraint).execute(Some(2))
       }
       
     }

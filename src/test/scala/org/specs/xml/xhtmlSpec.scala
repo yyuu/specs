@@ -14,12 +14,12 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.xml
 import Xhtml._
 
-class xhtmlSpec extends spex.Specification {
+class xhtmlSpec extends org.spex.Specification {
   "The Xhtml object" should {
     "have a spanLastTd function setting a colspan on each last td of a row, except the last one" in {
       val updated = Xhtml.spanLastTd(

@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.runner
 
@@ -24,10 +24,12 @@ import org.specs._
 import org.specs.runner._
 import org.specs.Sugar._
 import org.scalatest._
-import org.specs.mock.JMocker
+import org.scalatest.events._
+import org.specs.mock.Mockito
+import org.mockito.Mockito._
 import scala.collection.immutable._
 
-class scalaTestSpec extends SpecificationWithJUnit with ScalaTestMocks {
+class scalaTestSpec extends SpecificationWithJUnit with ScalaTestMocks with Contexts {
   "A ScalaTest runner" should {
     "create a ScalaTest suite named after the specification description" in {
       val spec = new SimpleSpecification(that.isOk)
@@ -43,33 +45,36 @@ class scalaTestSpec extends SpecificationWithJUnit with ScalaTestMocks {
       suiteWithGroups.nestedSuites.size must_== 2
     }
     "return groups corresponding to the tags on the specification" in {
-      val first = suiteWithGroups.nestedSuites.first
-      first.groups must_== Map("unit" -> Set("have a tag for the second example"))
+      val first = suiteWithGroups.nestedSuites.head
+      first.tags must_== Map("have a tag for the second example" -> Set("unit"))
     }
   }
   "A ScalaTest runner"->-(c) should {
     "report failures and errors as test failed, skipped as ignored and the rest as success" in {
-       expect {
-        2.of(reporter).testFailed(a[Report])
-        1.of(reporter).testIgnored(a[Report])
-        1.of(reporter).testSucceeded(a[Report])
-        allowOtherMethods.isExpectation
-      }
-      sampleSuite.execute(None, reporter, stopper, Set(), Set(), Map(), None)
+      sampleSuite.run(None, reporter, stopper, Filter(), Map(), None, new Tracker())
+      got {
+        atLeastOne(reporter).apply(any[SuiteStarting])
+        atLeastOne(reporter).apply(any[TestFailed])
+        one(reporter).apply(any[TestIgnored])
+        one(reporter).apply(any[TestSucceeded])
+        atLeastOne(reporter).apply(any[SuiteCompleted])
+     }
     }
     "use the tags defined on the examples when executing included groups only" in {
-      expect {
-        1.of(reporter).testSucceeded(a[Report]).isExpectation
-        allowOtherMethods
-      }
-      suiteWithGroups.execute(None, reporter, stopper, Set("unit"), Set(), Map(), None)
+      suiteWithGroups.run(None, reporter, stopper, new Filter(Some(Set("unit")), Set()), Map(), None, new Tracker())
+      got {
+        atLeastOne(reporter).apply(any[SuiteStarting])
+        one(reporter).apply(any[TestSucceeded]) 
+        atLeastOne(reporter).apply(any[SuiteCompleted]) 
+	  }
     }
     "use the tags defined on the examples, and not executing excluded groups" in {
-      expect {
-        2.of(reporter).testSucceeded(a[Report]).isExpectation
-        allowOtherMethods
-      }
-      suiteWithGroups.execute(None, reporter, stopper, Set(), Set("functional"), Map(), None)
+      suiteWithGroups.run(None, reporter, stopper, new Filter(None, Set("functional")), Map(), None, new Tracker())
+      got {
+        atLeastOne(reporter).apply(any[SuiteStarting]) 
+        two(reporter).apply(any[TestSucceeded]) 
+        atLeastOne(reporter).apply(any[SuiteCompleted]) 
+	  }
     }
   }
   def suite(behaviours: that.Value*) = new ScalaTestSuite(new SimpleSpecification(behaviours.toList))
@@ -94,16 +99,11 @@ class scalaTestSpec extends SpecificationWithJUnit with ScalaTestMocks {
     }
   }
 }
-trait ScalaTestMocks extends JMocker with Contexts { this: BaseSpecification =>
+trait ScalaTestMocks extends Mockito { this: BaseSpecification with Contexts =>
    var reporter = mock[org.scalatest.Reporter]
    var stopper = mock[org.scalatest.Stopper]
    val c = beforeContext {
      reporter = mock[org.scalatest.Reporter]
      stopper = mock[org.scalatest.Stopper]
-   }
-   def allowOtherMethods = {
-     allowingMatch(reporter, ".*Starting")
-     allowingMatch(reporter, ".*Completed")
-     allowing(stopper)
    }
 }

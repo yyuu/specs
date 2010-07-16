@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.runner
 
@@ -46,7 +46,7 @@ When executed, <ex>the TeamCity runner should notify the start of a specificatio
 
 <ex>The examples of system under specification should be reported as testStarted and testFinished inside the start and finished messages for the sus</ex>:
 
-{List("##teamcity[testSuiteStarted name='specification name']",
+{List("##teamcity[testSuiteStarted name='specification name']", 
       "##teamcity[testSuiteStarted name='sus1 description']",
       "##teamcity[testStarted name='specification name.good example']",
       "##teamcity[testFinished name='specification name.good example']",

@@ -14,12 +14,11 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.form
 
 import scala.xml._
-import scala.collection.mutable._
 import scala.collection.mutable.ListBuffer
 import org.specs.xml.NodeFunctions._
 import org.specs.util.IncludeExclude
@@ -74,11 +73,11 @@ trait Layout extends IncludeExclude[LabeledXhtml] {
   /**
    * adding several rows coming from another form
    */
-  def trs(rows: List[Seq[LabeledXhtml]]): this.type = {
+  def trs(rows: List[scala.Seq[LabeledXhtml]]): this.type = {
     appendRows(rows)
     this
   }
-  protected def appendRows(rows: List[Seq[LabeledXhtml]]) = rows.foreach { v => appendValues(v:_*) } 
+  protected def appendRows(rows: List[scala.Seq[LabeledXhtml]]) = rows.foreach { v => appendValues(v:_*) } 
   /** @return all rows as a List */
   def rows = rowValues.toList
   /** @return the number of rows */

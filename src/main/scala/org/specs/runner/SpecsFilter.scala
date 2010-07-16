@@ -14,13 +14,14 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.runner
 
 import org.specs.specification._
 import java.util.regex.Pattern.compile
 import java.util.regex.PatternSyntaxException
+import org.specs._
 
 trait SpecsFilter extends SpecsHolder {
 
@@ -58,7 +59,7 @@ trait SpecsFilter extends SpecsHolder {
    */
   def filter(specification: Specification): Option[Specification] = {
     specification.subSpecifications = specification.subSpecifications.flatMap(filter(_)).toList
-    specification.systems = specification.systems.flatMap(filter(_)).toList
+    specification.systemsList = specification.systemsList.flatMap(filter(_)).toList
     if (specification.subSpecifications.isEmpty && specification.systems.isEmpty)
       None
     else

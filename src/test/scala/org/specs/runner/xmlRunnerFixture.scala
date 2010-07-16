@@ -14,7 +14,7 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.runner
 import org.specs._
@@ -22,12 +22,12 @@ import org.specs.specification._
 import org.specs.util.Property
 import scala.xml._
 
-trait RunnerFixture extends HtmlSpecificationWithJUnit with RunnerTestData with literate.Html {
+trait RunnerFixture extends RunnerTestData with literate.Html { this: HtmlSpecificationWithJUnit =>
   def createSimpleSpecRunner = runner = simpleSpecRunner
   def executeCompositeSpecRunner = { runner = compositeSpecRunner; executeRunner }
   def executeRunner = { runner.reset; runner.reportSpecs.shh }
   def runnerOutputDir = { runner.setOutputDir _ }
-  def checkXml = XML.loadString(runner.readFile(runner.files.keys.next)) must \\(xml())
+  def checkXml = XML.loadString(runner.readFile(runner.files.keysIterator.next)) must \\(xml())
 
   def checkFilePath = {
     createSimpleSpecRunner

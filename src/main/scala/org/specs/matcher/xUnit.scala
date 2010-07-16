@@ -14,10 +14,12 @@
  * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS INTHE SOFTWARE.
+ * DEALINGS IN THE SOFTWARE.
  */
 package org.specs.matcher
 import org.specs.specification._
+import org.specs._
+
 /**
  * This trait provides methods to help the transition for xUnit users
  */
@@ -29,5 +31,5 @@ trait xUnit { self: Specification =>
   def assertNotSame[T](a: =>T, b: =>T) = a mustNotBe b
   def assertNull[T](a: =>T) = a must beNull
   def assertNotNull[T](a: =>T) = a must notBeNull
-  def assertArrayEquals[T](a: =>Array[T], b: =>Array[T]) = a must ((beEqualTo(_:T)).toSeq)(b)
+  def assertArrayEquals[T](a: =>Array[T], b: =>Array[T]) = a.toList must ((beEqualTo(_:T)).toSeq)(b.toList)
 }
