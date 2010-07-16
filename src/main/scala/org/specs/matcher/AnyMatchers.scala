@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2009 Eric Torreborre <etorreborre@yahoo.com>
+ * Copyright (c) 2007-2010 Eric Torreborre <etorreborre@yahoo.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -533,11 +533,16 @@ trait AnyBaseMatchers {
    */
   class SeqMatcher[S, T](s: Seq[S], f: S => Matcher[T]) extends Matcher[Seq[T]] {
     def apply(t: => Seq[T]) = {
-      val bothSequences = t.toList zip s.toList
-      val results = bothSequences map { st => val (t1, s1) = st
-                                        f(s1).apply(t1) }
-      (results.map(_._1).reduceLeft(_ && _), results.filter(_._1).map(_._2).mkString("; "),
-                                             results.filter(!_._1).map(_._3).mkString("; "))
+      val (l1, l2) = (t, s)
+      if (l1.size != l2.size) {
+        (false, l1+" has the same size as "+l2, l1+" doesn't have the same size as "+l2)
+      } else {
+        val bothSequences = l1.toList zip l2.toList
+        val results = bothSequences map { case (t1, s1) => f(s1).apply(t1) }
+        (results.isEmpty || results.map(_._1).reduceLeft(_ && _), 
+         results.filter(_._1).map(_._2).mkString("; "),
+         results.filter(!_._1).map(_._3).mkString("; "))
+      }
     }
   }
 
@@ -558,8 +563,9 @@ trait AnyBaseMatchers {
             case Some(x) => (true, q(element) + " matches with " + x, "no match for element " + q(element))
           }
         }
-        (results.map(_._1).reduceLeft(_ && _), results.filter(_._1).map(_._2).mkString("; "),
-                                               results.filter(!_._1).map(_._3).mkString("; "))
+        (results.isEmpty || results.map(_._1).reduceLeft(_ && _), 
+         results.filter(_._1).map(_._2).mkString("; "),
+         results.filter(!_._1).map(_._3).mkString("; "))
       }
     }
   }

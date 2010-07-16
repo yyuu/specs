@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2009 Eric Torreborre <etorreborre@yahoo.com>
+ * Copyright (c) 2007-2010 Eric Torreborre <etorreborre@yahoo.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -135,6 +135,18 @@ class iterableMatchersSpec extends MatchersSpecification {
     }
     "provide a 'be the sameSetAs' matcher" in {
       Set("1") must be the sameSetAs(Set("1"))
+    }
+    "provide a 'be the sameSeqAs' matcher" in {
+      "on empty seqs" >> {
+        List[Int]() must be the sameSeqAs(List[Int]())
+      }
+      "on non-empty seqs" >> {
+        List(1) must be the sameSeqAs(List(1))
+      }
+      "on seqs of different sizes" >> {
+        expectation(List(1) must beTheSameSeqAs(List(1, 2))) must failWith("List(1) doesn't have the same size as List(1, 2)")
+        expectation(List(1, 2) must beTheSameSeqAs(List())) must failWith("List(1, 2) doesn't have the same size as List()")
+      }
     }
   }
 }

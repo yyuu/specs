@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2009 Eric Torreborre <etorreborre@yahoo.com>
+ * Copyright (c) 2007-2010 Eric Torreborre <etorreborre@yahoo.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -58,6 +58,23 @@ class scalacheckMatchersSpec extends MatchersSpecification with ScalaCheckExampl
     }
     "accept properties based on scalacheck commands" in  {
       expectation(CounterSpecification must pass) must failWithMatch("A counter-example is .*")
+    }
+    "display one label in case of a failure" in  {
+      expectation((forAll((n: Int) => n == n+1) :| "label") must pass ) must failWithMatch("labels of failing property: label")
+    }
+    "display several labels in case of a failure" in  {
+      import org.scalacheck.Prop._
+      val multiply = forAll { (n: Int, m: Int) =>
+        val res = n*m
+        ("evidence = " + res) |: all(
+          "div1" |: m != 0 ==> (res / m == n),
+          "div2" |: n != 0 ==> (res / n == m),
+          "lt1"  |: res > m,
+          "lt2"  |: res > n
+        )
+      }
+      expectation(multiply must pass) must failWithMatch("evidence")
+      expectation(multiply must pass) must failWithMatch("lt1")
     }
   }
   val constantPair: Gen[(Double, Double)] = Gen.value((0.0, 0.0))

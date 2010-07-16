@@ -11,8 +11,8 @@ class Project(info: ProjectInfo) extends DefaultProject(info) {
   val junit 		= "junit" % "junit" % "4.5"
   val wikitext 		= "org.eclipse.mylyn.wikitext" % "wikitext" % "0.9.4.I20090220-1600-e3x" 
   val wikitextile 	= "org.eclipse.mylyn.wikitext" % "wikitext.textile" % "0.9.4.I20090220-1600-e3x" 
-  val scalatest 	= "org.scalatest" % "scalatest" % "1.2-for-scala-2.8.0.RC6-SNAPSHOT"
-  val scalacheck 	= "org.scala-tools.testing" % "scalacheck_2.8.0.RC6" % "1.7" 
+  val scalatest 	= "org.scalatest" % "scalatest" % "1.2-for-scala-2.8.0.final-SNAPSHOT"
+  val scalacheck 	= "org.scala-tools.testing" % "scalacheck_2.8.0" % "1.7" 
   val testinterface = "org.scala-tools.testing" % "test-interface" % "0.5" 
   val jmock 		= "org.jmock" % "jmock" % "2.5.1" 
   val jmocklegacy  = "org.jmock" % "jmock-legacy" % "2.5.1" 
@@ -28,14 +28,12 @@ class Project(info: ProjectInfo) extends DefaultProject(info) {
   val scriptjs   	= "javax.script" % "script-js" % "1.0"
   val jsengine  	= "javax.script" % "js-engine" % "1.0"
 
-  override def crossScalaVersions = List("2.8.0.RC6")
+  override def crossScalaVersions = List("2.8.0")
 
   override def managedStyle = ManagedStyle.Maven
   val publishTo = "Scala Tools Nexus" at "http://nexus-direct.scala-tools.org/content/repositories/releases/"
   Credentials(Path.userHome / ".ivy2" / ".credentials", log)
 
-  val snapshotsRepo = Resolver.url("snapshots-repo", new java.net.URL(
-  "http://nexus.scala-tools.org/content/repositories/snapshots"))
-  val specsRepo = Resolver.url("specs-repo", new java.net.URL("http://specs.googlecode.com/svn/maven2"))
-
+  val snapshotsRepo = "snapshots-repo" at "http://nexus.scala-tools.org/content/repositories/snapshots"
+  val specsRepo = "specs-repo" at "http://specs.googlecode.com/svn/maven2"
 }

@@ -16,35 +16,16 @@
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-package org.specs.io;
-import java.io._
+package org.specs.collection
+import org.specs.util._
 
 /**
- * The FileReader trait provides functions to read files
+ * This trait provides implicit definitions to transform Seqs and Arrays to 
+ * lazy parameters. It is used in the IterableMatchers
  */
-trait FileReader {
-
-  /**
-   * reads the content of a file
-   * @param path the path of the file to read
-   * @return the content of the file at path
-   */
-  def readFile(path: String): String = {
-    def appendLines(result: StringBuffer, in: BufferedReader, line: String): Unit = {
-      if (line != null) {
-        result.append(line)
-        result.append("\n")
-        appendLines(result, in, in.readLine)
-      }
-    }
-    val in = new BufferedReader(new java.io.FileReader(path));
-    val result = new StringBuffer
-    appendLines(result, in, in.readLine)
-    in.close();
-    result.toString
-  }
-  /**
-   * @returns a FileInputStream for a given file path
-   */
-  def inputStream(filePath: String): java.io.InputStream = new java.io.FileInputStream(filePath)
+trait LazyCollections {
+  implicit def lazyArray[T](a: =>Array[T]) = new LazyArray(a)
+  implicit def lazySeq[T](s: =>Seq[T]) = new LazySeq(s)
+  class LazyArray[T](a: => Array[T]) extends LazyParameter[Array[T]](() => a)
+  class LazySeq[T](s: => Seq[T]) extends LazyParameter[Seq[T]](() => s)
 }
